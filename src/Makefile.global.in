@@ -182,6 +182,7 @@ bitcodedir = $(pkglibdir)/bitcode
 with_icu	= @with_icu@
 with_perl	= @with_perl@
 with_python	= @with_python@
+with_clr	= @with_clr@
 with_tcl	= @with_tcl@
 with_openssl	= @with_openssl@
 with_readline	= @with_readline@
@@ -210,6 +211,15 @@ python_libspec		= @python_libspec@
 python_additional_libs	= @python_additional_libs@
 python_majorversion	= @python_majorversion@
 python_version		= @python_version@
+
+dotnet_sdk_majorversion		= @dotnet_sdk_majorversion@
+dotnet_sdk_minorversion		= @dotnet_sdk_minorversion@
+dotnet_sdk_version		= @dotnet_sdk_version@
+dotnet_runtime_majorversion	= @dotnet_runtime_majorversion@
+dotnet_runtime_minorversion	= @dotnet_runtime_minorversion@
+dotnet_runtime_patch		= @dotnet_runtime_patch@
+dotnet_runtime_version		= @dotnet_runtime_version@
+clr_nethostdir			= @clr_nethostdir@
 
 krb_srvtab = @krb_srvtab@
 
@@ -345,6 +355,7 @@ MSGFMT  = @MSGFMT@
 MSGFMT_FLAGS = @MSGFMT_FLAGS@
 MSGMERGE = @MSGMERGE@
 PYTHON	= @PYTHON@
+DOTNET	= @DOTNET@
 TAR	= @TAR@
 XGETTEXT = @XGETTEXT@
 

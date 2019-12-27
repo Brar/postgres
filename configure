@@ -664,6 +664,9 @@ SED
 ZIC
 clr_nethostdir
 dotnet_runtime_version
+dotnet_runtime_patch
+dotnet_runtime_minorversion
+dotnet_runtime_majorversion
 dotnet_sdk_version
 dotnet_sdk_minorversion
 dotnet_sdk_majorversion
@@ -9981,6 +9984,9 @@ if test "$dotnet_sdk_majorversion" -lt 3; then
 fi
 
 dotnet_runtime_version=`${DOTNET} --list-runtimes | grep "Microsoft.NETCore.App ${dotnet_sdk_majorversion}.${dotnet_sdk_minorversion}" | sed 's/^Microsoft\.NETCore\.App \(.*\) .*$/\1/'`
+dotnet_runtime_majorversion=`echo "$dotnet_runtime_version" | sed 's/^\([0-9]\{1,\}\).*/\1/'`
+dotnet_runtime_minorversion=`echo "$dotnet_runtime_version" | sed 's/^[0-9]\{1,\}\.\([0-9]\{1,\}\).*/\1/'`
+dotnet_runtime_patch=`echo "$dotnet_runtime_version" | sed 's/^[0-9]\{1,\}\.[0-9]\{1,\}\.\([0-9]\{1,\}\).*/\1/'`
 { $as_echo "$as_me:${as_lineno-$LINENO}: using .NET Core runtime $dotnet_runtime_version" >&5
 $as_echo "$as_me: using .NET Core runtime $dotnet_runtime_version" >&6;}
 

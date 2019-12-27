@@ -33,6 +33,9 @@ if test "$dotnet_sdk_majorversion" -lt 3; then
 fi
 
 dotnet_runtime_version=`${DOTNET} --list-runtimes | grep "Microsoft.NETCore.App ${dotnet_sdk_majorversion}.${dotnet_sdk_minorversion}" | sed 's/^Microsoft\.NETCore\.App \(.*\) .*$/\1/'`
+dotnet_runtime_majorversion=`echo "$dotnet_runtime_version" | sed '[s/^\([0-9]\{1,\}\).*/\1/]'`
+dotnet_runtime_minorversion=`echo "$dotnet_runtime_version" | sed '[s/^[0-9]\{1,\}\.\([0-9]\{1,\}\).*/\1/]'`
+dotnet_runtime_patch=`echo "$dotnet_runtime_version" | sed '[s/^[0-9]\{1,\}\.[0-9]\{1,\}\.\([0-9]\{1,\}\).*/\1/]'`
 AC_MSG_NOTICE([using .NET Core runtime $dotnet_runtime_version])
 
 AC_MSG_CHECKING([.NET Core nethost directory])
@@ -48,6 +51,9 @@ fi
 AC_SUBST(dotnet_sdk_majorversion)[]dnl
 AC_SUBST(dotnet_sdk_minorversion)[]dnl
 AC_SUBST(dotnet_sdk_version)[]dnl
+AC_SUBST(dotnet_runtime_majorversion)[]dnl
+AC_SUBST(dotnet_runtime_minorversion)[]dnl
+AC_SUBST(dotnet_runtime_patch)[]dnl
 AC_SUBST(dotnet_runtime_version)[]dnl
 AC_SUBST(clr_nethostdir)[]dnl
 ])# PGAC_CHECK_CLR_EMBED_SETUP
