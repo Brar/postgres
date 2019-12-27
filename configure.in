@@ -767,6 +767,14 @@ AC_MSG_RESULT([$with_python])
 AC_SUBST(with_python)
 
 #
+# Optionally build CLR modules (PL/CLR)
+#
+AC_MSG_CHECKING([whether to build CLR modules])
+PGAC_ARG_BOOL(with, clr, no, [build CLR modules (PL/CLR)])
+AC_MSG_RESULT([$with_clr])
+AC_SUBST(with_clr)
+
+#
 # GSSAPI
 #
 AC_MSG_CHECKING([whether to build with GSSAPI support])
@@ -1042,6 +1050,11 @@ fi
 if test "$with_python" = yes; then
   PGAC_PATH_PYTHON
   PGAC_CHECK_PYTHON_EMBED_SETUP
+fi
+
+if test "$with_clr" = yes; then
+  PGAC_PATH_DOTNET
+  PGAC_CHECK_CLR_EMBED_SETUP
 fi
 
 if test "$cross_compiling" = yes && test -z "$with_system_tzdata"; then
