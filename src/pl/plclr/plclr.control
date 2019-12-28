@@ -1,0 +1,8 @@
+# plclr extension
+comment = 'PL/CLR procedural language'
+default_version = '1.0'
+module_pathname = '$libdir/plclr'
+relocatable = false
+schema = pg_catalog
+superuser = true
+trusted = false
