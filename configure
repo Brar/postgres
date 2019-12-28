@@ -9881,9 +9881,20 @@ dotnet_runtime_patch=`echo "$dotnet_runtime_version" | sed 's/^[0-9]\{1,\}\.[0-9
 { $as_echo "$as_me:${as_lineno-$LINENO}: using .NET Core runtime $dotnet_runtime_version" >&5
 $as_echo "$as_me: using .NET Core runtime $dotnet_runtime_version" >&6;}
 
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking .NET Core installation base directory" >&5
+$as_echo_n "checking .NET Core installation base directory... " >&6; }
+clr_basedir=`${DOTNET} --info | grep 'Base Path:' | sed "s/^ *Base Path: *\(\/.*\)sdk.*$/\1/"`
+if test -d $clr_basedir
+then
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: $clr_basedir" >&5
+$as_echo "$clr_basedir" >&6; }
+else
+  as_fn_error $? ".NET Core installation base directory not found" "$LINENO" 5
+fi
+
 { $as_echo "$as_me:${as_lineno-$LINENO}: checking .NET Core nethost directory" >&5
 $as_echo_n "checking .NET Core nethost directory... " >&6; }
-clr_nethostdir=`${DOTNET} --info | grep 'Base Path:' | sed "s/^ *Base Path: *\(\/.*\)sdk.*$/\1packs\/Microsoft.NETCore.App.Host.linux-x64\/$dotnet_runtime_version\/runtimes\/linux-x64\/native\//"`
+clr_nethostdir=${clr_basedir}packs/Microsoft.NETCore.App.Host.linux-x64/$dotnet_runtime_version/runtimes/linux-x64/native/
 if test -d $clr_nethostdir
 then
   { $as_echo "$as_me:${as_lineno-$LINENO}: result: $clr_nethostdir" >&5
@@ -9891,12 +9902,6 @@ $as_echo "$clr_nethostdir" >&6; }
 else
   as_fn_error $? "nethost directory not found" "$LINENO" 5
 fi
-
-
-cat >>confdefs.h <<_ACEOF
-#define CLR_NETHOSTDIR "${clr_nethostdir}"
-_ACEOF
-
 
 
 fi

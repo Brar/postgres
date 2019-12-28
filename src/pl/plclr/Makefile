@@ -6,11 +6,19 @@ include $(top_builddir)/src/Makefile.global
 
 override CPPFLAGS := -I. -I$(srcdir) -I$(clr_nethostdir) $(CPPFLAGS)
 
-override LDFLAGS := $(LDFLAGS) -L $(clr_nethostdir) -lnethost
-
 rpathdir = $(clr_nethostdir)
 
+override LDFLAGS := $(LDFLAGS) -L $(clr_nethostdir) -lnethost
+
 PGFILEDESC = "PL/CLR - procedural language"
+
+ifeq ($(enable_debug),1)
+DOTNET_CONFIG = Debug
+else
+DOTNET_CONFIG = Release
+endif
+
+DOTNET_FLAGS = --nologo --configuration $(DOTNET_CONFIG) --framework netcoreapp$(dotnet_runtime_majorversion).$(dotnet_runtime_minorversion)
 
 NAME = plclr
 
@@ -29,10 +37,16 @@ REGRESS = plclr_test
 
 include $(top_srcdir)/src/Makefile.shlib
 
-all: all-lib
+all: all-lib managed-lib
 
 # Ensure parallel safety if a build is started in this directory
 $(OBJS): | submake-generated-headers
+
+managed-lib:
+	sed -i "s/<TargetFramework>netcoreapp3\.0<\/TargetFramework>/<TargetFramework>netcoreapp$(dotnet_runtime_majorversion)\.$(dotnet_runtime_minorversion)<\/TargetFramework>/gi" managed/PlClrManaged.csproj
+	$(DOTNET) build managed/PlClrManaged.csproj $(DOTNET_FLAGS)
+
+.PHONY: managed-lib
 
 install: all install-lib install-data
 
@@ -49,7 +63,12 @@ uninstall-data:
 
 .PHONY: install-data uninstall-data
 
-check: submake
+managed-check-install: temp-install
+	$(DOTNET) publish managed/PlClrManaged.csproj $(DOTNET_FLAGS) -o $(abs_top_builddir)/tmp_install$(libdir)
+
+.PHONY: managed-check-install
+
+check: submake managed-check-install
 	$(pg_regress_check) $(REGRESS_OPTS) $(REGRESS)
 
 installcheck: submake
@@ -62,3 +81,4 @@ submake:
 clean distclean: clean-lib
 	rm -f $(OBJS)
 	rm -rf $(pg_regress_clean_files)
+	$(DOTNET) clean managed/PlClrManaged.csproj $(DOTNET_FLAGS)

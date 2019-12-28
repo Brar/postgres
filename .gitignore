@@ -31,9 +31,11 @@ win32ver.rc
 *.exe
 lib*dll.def
 lib*.pc
+*.in~
 
 # Local excludes in root directory
 /GNUmakefile
+/autom4te.cache
 /config.cache
 /config.log
 /config.status
