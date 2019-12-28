@@ -38,17 +38,23 @@ dotnet_runtime_minorversion=`echo "$dotnet_runtime_version" | sed '[s/^[0-9]\{1,
 dotnet_runtime_patch=`echo "$dotnet_runtime_version" | sed '[s/^[0-9]\{1,\}\.[0-9]\{1,\}\.\([0-9]\{1,\}\).*/\1/]'`
 AC_MSG_NOTICE([using .NET Core runtime $dotnet_runtime_version])
 
+AC_MSG_CHECKING([.NET Core installation base directory])
+clr_basedir=`${DOTNET} --info | grep 'Base Path:' | sed "s/^ *Base Path: *\(\/.*\)sdk.*$/\1/"`
+if test -d $clr_basedir
+then
+  AC_MSG_RESULT([$clr_basedir])
+else
+  AC_MSG_ERROR([.NET Core installation base directory not found])
+fi
+
 AC_MSG_CHECKING([.NET Core nethost directory])
-clr_nethostdir=`${DOTNET} --info | grep 'Base Path:' | sed "s/^ *Base Path: *\(\/.*\)sdk.*$/\1packs\/Microsoft.NETCore.App.Host.linux-x64\/$dotnet_runtime_version\/runtimes\/linux-x64\/native\//"`
+clr_nethostdir=${clr_basedir}packs/Microsoft.NETCore.App.Host.linux-x64/$dotnet_runtime_version/runtimes/linux-x64/native/
 if test -d $clr_nethostdir
 then
   AC_MSG_RESULT([$clr_nethostdir])
 else
   AC_MSG_ERROR([nethost directory not found])
 fi
-
-AC_DEFINE_UNQUOTED(CLR_NETHOSTDIR, "${clr_nethostdir}",
-                   [Define the nethost directory as string constant.])
 
 AC_SUBST(dotnet_sdk_majorversion)[]dnl
 AC_SUBST(dotnet_sdk_minorversion)[]dnl

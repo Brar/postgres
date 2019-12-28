@@ -1,0 +1,29 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!-- Package configuration -->
+  <PropertyGroup>
+    <Authors>Brar Piening</Authors>
+    <Description>PlClrManaged is the manged part of PL/CLR, the .NET Core procedural language for PostgreSQL.</Description>
+    <PackageTags>plclr postgresql postgres database sql</PackageTags>
+    <Copyright>Copyright 2019 © Brar Piening</Copyright>
+    <Company>Brar Piening</Company>
+    <RepositoryType>git</RepositoryType>
+    <RepositoryUrl>git://github.com/Brar/postgres</RepositoryUrl>
+    <PackageLicenseExpression>MIT</PackageLicenseExpression>
+    <PackageProjectUrl>https://github.com/Brar/postgres/tree/PlCLR</PackageProjectUrl>
+  </PropertyGroup>
+
+  <!-- Framework configuration -->
+  <PropertyGroup>
+    <TargetFramework>netcoreapp3.0</TargetFramework>
+    <Platforms>x64</Platforms>
+    <EnableDynamicLoading>true</EnableDynamicLoading>
+  </PropertyGroup>
+
+  <!-- Language configuration -->
+  <PropertyGroup>
+    <LangVersion>8.0</LangVersion>
+    <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
+    <Nullable>enable</Nullable>
+  </PropertyGroup>
+</Project>
