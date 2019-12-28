@@ -47,5 +47,10 @@
   tmplinline => 'plpython3_inline_handler',
   tmplvalidator => 'plpython3_validator', tmpllibrary => '$libdir/plpython3',
   tmplacl => '_null_' },
+{ tmplname => 'plclr', tmpltrusted => 'f', tmpldbacreate => 'f',
+  tmplhandler => 'plclr_call_handler',
+  tmplinline => '_null_',
+  tmplvalidator => '_null_', tmpllibrary => '$libdir/plclr',
+  tmplacl => '_null_' },
 
 ]
