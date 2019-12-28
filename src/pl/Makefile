@@ -26,6 +26,12 @@ else
 ALWAYS_SUBDIRS += plpython
 endif
 
+ifeq ($(with_clr), yes)
+SUBDIRS += plclr
+else
+ALWAYS_SUBDIRS += plclr
+endif
+
 ifeq ($(with_tcl), yes)
 SUBDIRS += tcl
 else
