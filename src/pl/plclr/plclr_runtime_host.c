@@ -38,8 +38,9 @@ plclr_runtime_host_init(void)
 #ifdef WIN32
     char_t wide_buffer[MAXPGPATH];
 #else
-    char_t* wide_buffer = &buffer;
+    char_t* wide_buffer = (char_t*)&buffer;
 #endif
+
     int rc;
     void *lib;
     load_assembly_and_get_function_pointer_fn load_assembly_and_get_function_pointer = NULL;
