@@ -90,8 +90,8 @@ plclr_runtime_host_init(void)
         NULL,
         (void**)&hello);
 
-    if (rc == 0 || hello != NULL)
-        elog(ERROR, "Function load_assembly_and_get_function_pointer() failed: %s", buffer);
+    if (rc != 0 || hello == NULL)
+        elog(ERROR, "Function load_assembly_and_get_function_pointer() failed: %x", rc);
 
     for (int i = 0; i < 3; ++i)
     {
