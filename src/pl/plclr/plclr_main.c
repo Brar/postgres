@@ -5,9 +5,13 @@
  */
 
 #include "postgres.h"
+#include "catalog/pg_proc.h"
+#include "catalog/pg_type.h"
 #include "commands/trigger.h"
 #include "commands/event_trigger.h"
 #include "fmgr.h"
+#include "utils/builtins.h"
+#include "utils/syscache.h"
 #include "plclr_runtime_host.h"
 
 /*
@@ -36,24 +40,44 @@ _PG_init(void)
 Datum
 plclr_call_handler(PG_FUNCTION_ARGS)
 {
-    Datum        retval;
+    Datum retval;
+    HeapTuple procTup;
+    Form_pg_proc procStruct;
+    Datum prosrcdatum;
+    bool isnull;
+    FunctionCompileInfo compileInfo;
 
-     PG_TRY();
-     {
-         if (CALLED_AS_TRIGGER(fcinfo))
-             retval = (Datum) 0;
-         else if (CALLED_AS_EVENT_TRIGGER(fcinfo))
-         {
-             retval = (Datum) 0;
+    PG_TRY();
+    {
+        if (CALLED_AS_TRIGGER(fcinfo))
+            retval = (Datum) 0;
+        else if (CALLED_AS_EVENT_TRIGGER(fcinfo))
+        {
+            retval = (Datum) 0;
+        }
+        else
+        {
+            compileInfo.FunctionOid = fcinfo->flinfo->fn_oid;
+
+            procTup = SearchSysCache1(PROCOID, ObjectIdGetDatum(compileInfo.FunctionOid));
+            if (!HeapTupleIsValid(procTup))
+                elog(ERROR, "cache lookup failed for function %u", compileInfo.FunctionOid);
+            procStruct = (Form_pg_proc) GETSTRUCT(procTup);
+            compileInfo.FunctionName = NameStr(procStruct->proname);
+
+            prosrcdatum = SysCacheGetAttr(PROCOID, procTup, Anum_pg_proc_prosrc, &isnull);
+            if (isnull)
+                elog(ERROR, "null prosrc");
+            compileInfo.FunctionBody = TextDatumGetCString(prosrcdatum);
+
+            retval = (Datum)compile_and_execute((FunctionCompileInfoPtr)&compileInfo);
          }
-         else
-             retval = (Datum) 0;
-     }
-     PG_CATCH();
-     {
-         PG_RE_THROW();
-     }
-     PG_END_TRY();
+    }
+    PG_CATCH();
+    {
+        PG_RE_THROW();
+    }
+    PG_END_TRY();
 
     return retval;
 }

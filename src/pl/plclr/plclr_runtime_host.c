@@ -23,12 +23,19 @@ struct lib_args
     int number;
 };
 
-
 /* Globals to hold hostfxr exports */
 hostfxr_initialize_for_runtime_config_fn hostfxr_initialize;
 hostfxr_get_runtime_delegate_fn hostfxr_get_runtime_delegate;
 hostfxr_close_fn hostfxr_close;
 
+component_entry_point_fn plclr_compile_function = NULL;
+
+
+int
+compile_and_execute(FunctionCompileInfoPtr compileInfo)
+{
+    return plclr_compile_function(compileInfo, sizeof(FunctionCompileInfo));
+}
 
 void
 plclr_runtime_host_init(void)
@@ -44,9 +51,11 @@ plclr_runtime_host_init(void)
     int rc;
     void *lib;
     load_assembly_and_get_function_pointer_fn load_assembly_and_get_function_pointer = NULL;
-    component_entry_point_fn hello = NULL;
+    // component_entry_point_fn hello = NULL;
+    // const char_t* dotnet_type = STR("PlClrManaged.Lib, PlClrManaged");
+    // const char_t* dotnet_type_method = STR("Hello");
     const char_t* dotnet_type = STR("PlClrManaged.Lib, PlClrManaged");
-    const char_t* dotnet_type_method = STR("Hello");
+    const char_t* dotnet_type_method = STR("CompileAndExecute");
 
     rc = get_hostfxr_path(wide_buffer, &buffer_size, NULL);
     if (rc != 0)
@@ -82,11 +91,12 @@ plclr_runtime_host_init(void)
 #ifdef WIN32
     utf8_to_utf16le(buffer, wide_buffer, MAXPGPATH);
 #endif
+ /*
     rc = load_assembly_and_get_function_pointer(
         wide_buffer,
         dotnet_type,
         dotnet_type_method,
-        NULL /*delegate_type_name*/,
+        NULL,
         NULL,
         (void**)&hello);
 
@@ -103,6 +113,17 @@ plclr_runtime_host_init(void)
 
         hello(&args, sizeof(args));
     }
+*/
+    rc = load_assembly_and_get_function_pointer(
+        wide_buffer,
+        dotnet_type,
+        dotnet_type_method,
+        NULL,
+        NULL,
+        (void**)&plclr_compile_function);
+
+    if (rc != 0 || plclr_compile_function == NULL)
+        elog(ERROR, "Function load_assembly_and_get_function_pointer() failed: %x", rc);
 }
 
 void*
