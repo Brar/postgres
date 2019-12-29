@@ -884,10 +884,10 @@ sub GenerateConfigHeader
 		}
 		close($o);
 		close($i);
-	}
-	if ($required && scalar(keys %defines_copy) > 0)
-	{
-		croak "unused defines: " . join(' ', keys %defines_copy);
+		if ($required && scalar(keys %defines_copy) > 0)
+		{
+			croak "unused defines: " . join(' ', keys %defines_copy);
+		}
 	}
 }
 
