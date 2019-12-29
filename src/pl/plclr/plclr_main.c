@@ -23,20 +23,20 @@ PG_FUNCTION_INFO_V1(plclr_call_handler);
 void
 _PG_init(void)
 {
-	static bool inited = false;
+    static bool inited = false;
 
-	if (inited)
-		return;
+    if (inited)
+        return;
 
-	plclr_runtime_host_init();
+    plclr_runtime_host_init();
 
-	inited = true;
+    inited = true;
 }
 
 Datum
 plclr_call_handler(PG_FUNCTION_ARGS)
 {
-	Datum		retval;
+    Datum        retval;
 
      PG_TRY();
      {
@@ -55,5 +55,5 @@ plclr_call_handler(PG_FUNCTION_ARGS)
      }
      PG_END_TRY();
 
-	return retval;
+    return retval;
 }
