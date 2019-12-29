@@ -25,7 +25,8 @@ NAME = plclr
 OBJS = \
 	$(WIN32RES) \
 	plclr_main.o \
-	plclr_runtime_host.o
+	plclr_runtime_host.o \
+	plclr_string.o
 
 DATA += plclr.control plclr--1.0.sql plclr--unpackaged--1.0.sql
 

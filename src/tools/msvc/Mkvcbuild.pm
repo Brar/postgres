@@ -244,6 +244,37 @@ sub mkvcbuild
 		  unless $found;
 	}
 
+	if ($solution->{options}->{clr})
+	{
+		# if a directory was specified we use dotnet.exe from there
+		# otherwise we assume that it's in the PATH
+		my $dotnet = 'dotnet';
+		if (-d $solution->{options}->{clr})
+		{
+			$dotnet = $solution->{options}->{clr} . "\\dotnet";
+		}
+
+		my $dotnet_sdk_version = `$dotnet --version`;
+		chomp $dotnet_sdk_version;
+		my $dotnet_sdk_majorversion = $dotnet_sdk_version =~ s/^([0-9]+).*$/$1/r;
+		my $dotnet_sdk_minorversion = $dotnet_sdk_version =~ s/^[0-9]+\.([0-9]+).*$/$1/r;
+
+		# Reject unsupported .NET Core versions as soon as practical.
+		die ".NET Core version $dotnet_sdk_version is too old (version 3.0 or later is required!\n" if $dotnet_sdk_majorversion < 3;
+
+		my $dotnet_runtime_version = `$dotnet --list-runtimes` =~ s/^.*Microsoft\.NETCore\.App\s*($dotnet_sdk_majorversion\.$dotnet_sdk_minorversion\.[0-9]+).*$/$1/rs;
+		my $dotnet_runtime_majorversion = $dotnet_runtime_version =~ s/^([0-9]+).*$/$1/r;
+		my $dotnet_runtime_minorversion = $dotnet_runtime_version =~ s/^[0-9]+\.([0-9]+).*$/$1/r;
+		my $dotnet_runtime_patch = $dotnet_runtime_version =~ s/^[0-9]+\.[0-9]+\.([0-9]+).*$/$1/r;
+
+		my $clr_nethostdir = `$dotnet --info` =~ s/^.*Base Path:\s*(\S.*?)sdk.*$/${1}packs\\Microsoft.NETCore.App.Host.win-x64\\$dotnet_runtime_version\\runtimes\\win-x64\\native\\/rs;
+
+		my $plclr = $solution->AddProject('plclr', 'dll', 'PLs', 'src/pl/plclr');
+		$plclr->AddIncludeDir($clr_nethostdir);
+		$plclr->AddLibrary($clr_nethostdir . "nethost.lib");
+		$plclr->AddReference($postgres);
+	}
+
 	$libpq = $solution->AddProject('libpq', 'dll', 'interfaces',
 		'src/interfaces/libpq');
 	$libpq->AddDefine('FRONTEND');
