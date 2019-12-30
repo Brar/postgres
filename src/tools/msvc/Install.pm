@@ -154,6 +154,7 @@ sub Install
 		my @pldirs             = ('src/pl/plpgsql/src');
 		push @pldirs, "src/pl/plperl"   if $config->{perl};
 		push @pldirs, "src/pl/plpython" if $config->{python};
+		push @pldirs, "src/pl/plclr" if $config->{clr};
 		push @pldirs, "src/pl/tcl"      if $config->{tcl};
 		File::Find::find(
 			{
@@ -171,6 +172,8 @@ sub Install
 	}
 
 	GenerateNLSFiles($target, $config->{nls}, $majorver) if ($config->{nls});
+
+	PublishPlClrProjects($target, $config->{clr}, $conf) if $config->{clr};
 
 	print "Installation complete.\n";
 	return;
@@ -737,6 +740,31 @@ sub GenerateNLSFiles
 	}
 	print "\n";
 	return;
+}
+
+sub PublishPlClrProjects
+{
+	my ($target, $clrConfig, $conf) = @_;
+
+	print "Publishing managed plclr files...\n";
+
+	my $dotnet = 'dotnet';
+	if (-d $clrConfig)
+	{
+		$dotnet = $clrConfig . "\\dotnet";
+	}
+
+	my $managedBasePath = 'src/pl/plclr/managed';
+	my $solutionFileName = "$managedBasePath/PlClrManaged.sln";
+	my $F;
+	open($F, '<:encoding(UTF-8)', $solutionFileName) || die "Could not open file $solutionFileName";
+	LINE: while (<$F>) {
+		chomp;
+		next LINE if !m/^Project\("\{[0-9a-fA-F]{8}\-[0-9a-fA-F]{4}\-[0-9a-fA-F]{4}\-[0-9a-fA-F]{4}\-[0-9a-fA-F]{12}}"\) = "[^"]+", "(?<ProjectPath>[^"]+)", "\{{0,1}[0-9a-fA-F]{8}\-[0-9a-fA-F]{4}\-[0-9a-fA-F]{4}\-[0-9a-fA-F]{4}\-[0-9a-fA-F]{12}}"$/;
+		print `$dotnet publish --no-build --nologo $managedBasePath/$+{ProjectPath} --output $target/lib --configuration $conf`;
+	}
+	my $txt = <$F>;
+	close($F);
 }
 
 sub DetermineMajorVersion
