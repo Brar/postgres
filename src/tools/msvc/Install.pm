@@ -754,17 +754,7 @@ sub PublishPlClrProjects
 		$dotnet = $clrConfig . "\\dotnet";
 	}
 
-	my $managedBasePath = 'src/pl/plclr/managed';
-	my $solutionFileName = "$managedBasePath/PlClrManaged.sln";
-	my $F;
-	open($F, '<:encoding(UTF-8)', $solutionFileName) || die "Could not open file $solutionFileName";
-	LINE: while (<$F>) {
-		chomp;
-		next LINE if !m/^Project\("\{[0-9a-fA-F]{8}\-[0-9a-fA-F]{4}\-[0-9a-fA-F]{4}\-[0-9a-fA-F]{4}\-[0-9a-fA-F]{12}}"\) = "[^"]+", "(?<ProjectPath>[^"]+)", "\{{0,1}[0-9a-fA-F]{8}\-[0-9a-fA-F]{4}\-[0-9a-fA-F]{4}\-[0-9a-fA-F]{4}\-[0-9a-fA-F]{12}}"$/;
-		print `$dotnet publish --no-build --nologo $managedBasePath/$+{ProjectPath} --output $target/lib --configuration $conf`;
-	}
-	my $txt = <$F>;
-	close($F);
+	print `$dotnet publish --nologo --no-build --configuration $conf --output $target/lib src/pl/plclr/managed/PlClrManaged.sln`;
 }
 
 sub DetermineMajorVersion
