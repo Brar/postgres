@@ -16,13 +16,16 @@ if exist pgsql.sln del /q pgsql.sln
 if exist pgsql.sln.cache del /q pgsql.sln.cache
 if exist pgsql.sdf del /q pgsql.sdf
 if exist pgsql.suo del /q /a:H pgsql.suo
-del /s /q src\bin\win32ver.rc 2> NUL
-del /s /q src\interfaces\win32ver.rc 2> NUL
+del /s /q src\bin\win32ver.rc 1> NUL 2>&1
+del /s /q src\interfaces\win32ver.rc 1> NUL 2>&1
 if exist src\backend\win32ver.rc del /q src\backend\win32ver.rc
 if exist src\backend\replication\libpqwalreceiver\win32ver.rc del /q src\backend\replication\libpqwalreceiver\win32ver.rc
 if exist src\backend\replication\pgoutput\win32ver.rc del /q src\backend\replication\pgoutput\win32ver.rc
 if exist src\backend\snowball\win32ver.rc del /q src\backend\snowball\win32ver.rc
 if exist src\interfaces\ecpg\test\win32ver.rc del /q src\interfaces\ecpg\test\win32ver.rc
+if exist src\pl\plclr\win32ver.rc del /q src\pl\plclr\win32ver.rc
+if exist src\pl\plclr\managed\obj rd /s /q src\pl\plclr\managed\obj
+if exist src\pl\plclr\managed\bin rd /s /q src\pl\plclr\managed\bin
 if exist src\pl\plperl\win32ver.rc del /q src\pl\plperl\win32ver.rc
 if exist src\pl\plpgsql\src\win32ver.rc del /q src\pl\plpgsql\src\win32ver.rc
 if exist src\pl\plpython\win32ver.rc del /q src\pl\plpython\win32ver.rc
