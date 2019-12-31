@@ -21,6 +21,7 @@ sub _new
 
 	$self->{filenameExtension} = '.vcxproj';
 	$self->{ToolsVersion}      = '4.0';
+	$self->{path}              = $self->{name} . $self->{filenameExtension};
 
 	return $self;
 }
@@ -120,7 +121,7 @@ EOF
 		foreach my $ref (@references)
 		{
 			print $f <<EOF;
-    <ProjectReference Include="$ref->{name}$ref->{filenameExtension}">
+    <ProjectReference Include="$ref->{path}">
       <Project>$ref->{guid}</Project>
     </ProjectReference>
 EOF

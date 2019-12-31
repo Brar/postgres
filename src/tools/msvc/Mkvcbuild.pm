@@ -269,10 +269,19 @@ sub mkvcbuild
 
 		my $clr_nethostdir = `$dotnet --info` =~ s/^.*Base Path:\s*(\S.*?)sdk.*$/${1}packs\\Microsoft.NETCore.App.Host.win-x64\\$dotnet_runtime_version\\runtimes\\win-x64\\native\\/rs;
 
+		my $plclrManaged = $solution->AddExistingProject('PLs', 'src/pl/plclr/managed/PlClrManaged.csproj');
 		my $plclr = $solution->AddProject('plclr', 'dll', 'PLs', 'src/pl/plclr');
 		$plclr->AddIncludeDir($clr_nethostdir);
 		$plclr->AddLibrary($clr_nethostdir . "nethost.lib");
 		$plclr->AddReference($postgres);
+		$solution->AddProjectDependency($plclr, $plclrManaged)
+
+		# This doens't currently work due to a .NET framework mismatch
+		# that has yet to be investigated but it is probably the way to
+		# go in the future because project dependencies in the solution
+		# file won't get built if we build the project from the vcxproj
+		# file.
+		#$plclr->AddReference($plclrManaged);
 	}
 
 	$libpq = $solution->AddProject('libpq', 'dll', 'interfaces',
@@ -397,18 +406,15 @@ sub mkvcbuild
 	$pgbasebackup->AddFile('src/bin/pg_basebackup/pg_basebackup.c');
 	$pgbasebackup->AddLibrary('ws2_32.lib');
 
-	my $pgreceivewal = AddSimpleFrontend('pg_basebackup', 1);
-	$pgreceivewal->{name} = 'pg_receivewal';
+	my $pgreceivewal = AddSimpleFrontend('pg_basebackup', 1, 'pg_receivewal');
 	$pgreceivewal->AddFile('src/bin/pg_basebackup/pg_receivewal.c');
 	$pgreceivewal->AddLibrary('ws2_32.lib');
 
-	my $pgrecvlogical = AddSimpleFrontend('pg_basebackup', 1);
-	$pgrecvlogical->{name} = 'pg_recvlogical';
+	my $pgrecvlogical = AddSimpleFrontend('pg_basebackup', 1, 'pg_recvlogical');
 	$pgrecvlogical->AddFile('src/bin/pg_basebackup/pg_recvlogical.c');
 	$pgrecvlogical->AddLibrary('ws2_32.lib');
 
-	my $pgrewind = AddSimpleFrontend('pg_rewind', 1);
-	$pgrewind->{name} = 'pg_rewind';
+	my $pgrewind = AddSimpleFrontend('pg_rewind', 1, 'pg_rewind');
 	$pgrewind->AddFile('src/backend/access/transam/xlogreader.c');
 	$pgrewind->AddLibrary('ws2_32.lib');
 	$pgrewind->AddDefine('FRONTEND');
@@ -428,7 +434,7 @@ sub mkvcbuild
 	$pgdump->AddFile('src/bin/pg_dump/pg_dump_sort.c');
 	$pgdump->AddLibrary('ws2_32.lib');
 
-	my $pgdumpall = AddSimpleFrontend('pg_dump', 1);
+	my $pgdumpall = AddSimpleFrontend('pg_dump', 1, 'pg_dumpall');
 
 	# pg_dumpall doesn't use the files in the Makefile's $(OBJS), unlike
 	# pg_dump and pg_restore.
@@ -437,14 +443,12 @@ sub mkvcbuild
 	my @nodumpall = grep { m!src/bin/pg_dump/.*\.c$! }
 	  keys %{ $pgdumpall->{files} };
 	delete @{ $pgdumpall->{files} }{@nodumpall};
-	$pgdumpall->{name} = 'pg_dumpall';
 	$pgdumpall->AddIncludeDir('src/backend');
 	$pgdumpall->AddFile('src/bin/pg_dump/pg_dumpall.c');
 	$pgdumpall->AddFile('src/bin/pg_dump/dumputils.c');
 	$pgdumpall->AddLibrary('ws2_32.lib');
 
-	my $pgrestore = AddSimpleFrontend('pg_dump', 1);
-	$pgrestore->{name} = 'pg_restore';
+	my $pgrestore = AddSimpleFrontend('pg_dump', 1, 'pg_restore');
 	$pgrestore->AddIncludeDir('src/backend');
 	$pgrestore->AddFile('src/bin/pg_dump/pg_restore.c');
 	$pgrestore->AddLibrary('ws2_32.lib');
@@ -890,6 +894,7 @@ sub AddSimpleFrontend
 {
 	my $n        = shift;
 	my $uselibpq = shift;
+	my $newName = shift;
 
 	my $p = $solution->AddProject($n, 'exe', 'bin');
 	$p->AddDir('src/bin/' . $n);
@@ -903,6 +908,11 @@ sub AddSimpleFrontend
 	# Adjust module definition using frontend variables
 	AdjustFrontendProj($p);
 
+	if ($newName)
+	{
+		$p->{name} = $newName;
+		$p->{path} = $newName . $p->{filenameExtension};
+	}
 	return $p;
 }
 

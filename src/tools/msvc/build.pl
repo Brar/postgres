@@ -50,6 +50,23 @@ elsif (uc($ARGV[0]) ne "RELEASE")
 	$buildwhat = $ARGV[0] || "";
 }
 
+# Restore managed packages if we build plclr
+if ($config->{clr}) {
+	my $dotnet = 'dotnet';
+	if (-d $config->{clr})
+	{
+		$dotnet = $config->{clr} . "\\dotnet";
+	}
+
+	print `$dotnet restore src/pl/plclr/managed/PlClrManaged.sln`;
+
+	# Build managed packages here as a workaround for insufficient project dependency
+	# setup. See comment in the plclr section of Mkvcbuild.pm
+	if (lc($buildwhat) eq 'plclr') {
+		print `$dotnet build --nologo --configuration $bconf src/pl/plclr/managed/PlClrManaged.sln`;
+	}
+}
+
 # ... and do it
 
 if ($buildwhat)

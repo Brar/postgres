@@ -9,6 +9,7 @@ use Carp;
 use strict;
 use warnings;
 use VSObjectFactory;
+use ExistingProject;
 
 no warnings qw(redefine);    ## no critic
 
@@ -18,6 +19,7 @@ sub _new
 	my $options   = shift;
 	my $self      = {
 		projects                   => {},
+		ProjectDependencies        => {},
 		options                    => $options,
 		VisualStudioVersion        => undef,
 		MinimumVisualStudioVersion => undef,
@@ -1043,6 +1045,22 @@ sub AddProject
 	return $proj;
 }
 
+sub AddExistingProject
+{
+	my ($self, $folder, $existingProjectFile) = @_;
+
+	my $proj = new ExistingProject($existingProjectFile, $self);
+	push @{ $self->{projects}->{$folder} }, $proj;
+	return $proj;
+}
+
+sub AddProjectDependency
+{
+	# It's $proj depends on $dependency
+	my ($self, $proj, $dependency) = @_;
+	push @{ $self->{ProjectDependencies}->{$proj->{guid}} }, $dependency->{guid};
+}
+
 sub Save
 {
 	my ($self) = @_;
@@ -1069,10 +1087,15 @@ EOF
 	{
 		foreach my $proj (@{ $self->{projects}->{$fld} })
 		{
-			print $sln <<EOF;
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "$proj->{name}", "$proj->{name}$proj->{filenameExtension}", "$proj->{guid}"
-EndProject
-EOF
+			print $sln qq{Project("$proj->{typeguid}") = "$proj->{name}", "$proj->{path}", "$proj->{guid}"\n};
+			if ($self->{ProjectDependencies}->{$proj->{guid}}) {
+				print $sln "\tProjectSection(ProjectDependencies) = postProject\n";
+				foreach my $dependency (@{ $self->{ProjectDependencies}->{$proj->{guid}} }) {
+					print $sln "\t\t$dependency = $dependency\n";
+				}
+				print $sln "\tEndProjectSection\n";
+			}
+			print $sln "EndProject\n";
 		}
 		if ($fld ne "")
 		{
@@ -1087,7 +1110,7 @@ EOF
 	print $sln <<EOF;
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
-		Debug|$self->{platform}= Debug|$self->{platform}
+		Debug|$self->{platform} = Debug|$self->{platform}
 		Release|$self->{platform} = Release|$self->{platform}
 	EndGlobalSection
 	GlobalSection(ProjectConfigurationPlatforms) = postSolution
@@ -1099,7 +1122,7 @@ EOF
 		{
 			print $sln <<EOF;
 		$proj->{guid}.Debug|$self->{platform}.ActiveCfg = Debug|$self->{platform}
-		$proj->{guid}.Debug|$self->{platform}.Build.0  = Debug|$self->{platform}
+		$proj->{guid}.Debug|$self->{platform}.Build.0 = Debug|$self->{platform}
 		$proj->{guid}.Release|$self->{platform}.ActiveCfg = Release|$self->{platform}
 		$proj->{guid}.Release|$self->{platform}.Build.0 = Release|$self->{platform}
 EOF
