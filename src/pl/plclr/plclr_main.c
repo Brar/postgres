@@ -9,16 +9,21 @@
 #include "catalog/pg_type.h"
 #include "commands/trigger.h"
 #include "commands/event_trigger.h"
+#include "mb/pg_wchar.h"
 #include "fmgr.h"
 #include "utils/builtins.h"
 #include "utils/syscache.h"
 #include "plclr_runtime_host.h"
+#include <access/xact.h>
 
 /*
  * exported functions
  */
 
 extern void _PG_init(void);
+
+static clr_char* server_encoding_to_clr_char(const char *input);
+
 
 PG_MODULE_MAGIC;
 
@@ -46,7 +51,7 @@ plclr_call_handler(PG_FUNCTION_ARGS)
     Datum prosrcdatum;
     bool isnull;
     FunctionCompileInfo compileInfo;
-
+	
     PG_TRY();
     {
         if (CALLED_AS_TRIGGER(fcinfo))
@@ -63,14 +68,18 @@ plclr_call_handler(PG_FUNCTION_ARGS)
             if (!HeapTupleIsValid(procTup))
                 elog(ERROR, "cache lookup failed for function %u", compileInfo.FunctionOid);
             procStruct = (Form_pg_proc) GETSTRUCT(procTup);
-            compileInfo.FunctionName = NameStr(procStruct->proname);
+            compileInfo.FunctionName = server_encoding_to_clr_char(NameStr(procStruct->proname));
 
             prosrcdatum = SysCacheGetAttr(PROCOID, procTup, Anum_pg_proc_prosrc, &isnull);
             if (isnull)
                 elog(ERROR, "null prosrc");
-            compileInfo.FunctionBody = TextDatumGetCString(prosrcdatum);
+            compileInfo.FunctionBody = server_encoding_to_clr_char(TextDatumGetCString(prosrcdatum));
 
             retval = (Datum)compile_and_execute((FunctionCompileInfoPtr)&compileInfo);
+
+        	pfree((void*)compileInfo.FunctionName);
+        	pfree((void*)compileInfo.FunctionBody);
+        	ReleaseSysCache(procTup);
          }
     }
     PG_CATCH();
@@ -80,4 +89,77 @@ plclr_call_handler(PG_FUNCTION_ARGS)
     PG_END_TRY();
 
     return retval;
+}
+
+static clr_char*
+server_encoding_to_clr_char(const char *input)
+{
+	int			db_encoding = GetDatabaseEncoding();
+	size_t		input_length = strlen(input);
+	size_t		output_length = input_length;
+	const char* bla = pg_enc2gettext_tbl[db_encoding].name;
+	clr_char*	output;
+	UINT		codepage;
+
+#ifdef WIN32
+	const pg_enc2name *p = &pg_enc2name_tbl[db_encoding];
+	codepage = p->codepage;
+	
+
+	if (codepage != 0)
+	{
+		output = (clr_char *) palloc(sizeof(clr_char) * (input_length + 1));
+		output_length = MultiByteToWideChar(codepage, 0, input, input_length, output, input_length);
+		output[output_length] = (clr_char) 0;
+	}
+	else if (db_encoding != PG_UTF8 && 0 != strcmp(bla, "UTF-8"))
+#else
+	if (db_encoding != PG_UTF8)
+#endif
+	{
+		char	   *utf8;
+
+		/*
+		 * XXX pg_do_encoding_conversion() requires a transaction.  In the
+		 * absence of one, hope for the input to be valid UTF8.
+		 */
+		if (IsTransactionState())
+		{
+			utf8 = (char *) pg_do_encoding_conversion((unsigned char *) input,
+													  input_length,
+													  db_encoding,
+													  PG_UTF8);
+			if (utf8 != input)
+				input_length = strlen(utf8);
+		}
+		else
+			utf8 = (char *) input;
+
+		output = (clr_char *) palloc(sizeof(clr_char) * (input_length + 1));
+#ifdef WIN32
+		output_length = MultiByteToWideChar(CP_UTF8, 0, utf8, input_length, output, input_length);
+#else
+		memcpy(output, input, input_length);
+#endif
+		output[output_length] = (clr_char) 0;
+
+		if (utf8 != input)
+			pfree(utf8);
+	}
+	/* If our input is already UTF-8 we have to and copy it to a new
+	 * palloc'd output anyways as that's what our caller expects.
+	 */
+	else
+	{
+		output = (clr_char *) palloc(sizeof(clr_char) * (input_length + 1));
+		memcpy(output, input, input_length);
+	}
+
+	if (output_length == 0 && input_length > 0)
+	{
+		pfree(output);
+		return NULL;			/* error */
+	}
+
+	return output;
 }

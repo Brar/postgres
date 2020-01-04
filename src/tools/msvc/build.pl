@@ -58,12 +58,12 @@ if ($config->{clr}) {
 		$dotnet = $config->{clr} . "\\dotnet";
 	}
 
-	print `$dotnet restore src/pl/plclr/managed/PlClrManaged.sln`;
+	print `$dotnet restore src/pl/plclr/managed/PlClr.Managed.sln`;
 
 	# Build managed packages here as a workaround for insufficient project dependency
 	# setup. See comment in the plclr section of Mkvcbuild.pm
 	if (lc($buildwhat) eq 'plclr') {
-		print `$dotnet build --nologo --configuration $bconf src/pl/plclr/managed/PlClrManaged.sln`;
+		print `$dotnet build --nologo --no-restore --configuration $bconf src/pl/plclr/managed/PlClr.Managed.sln`;
 	}
 }
 

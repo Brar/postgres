@@ -754,7 +754,7 @@ sub PublishPlClrProjects
 		$dotnet = $clrConfig . "\\dotnet";
 	}
 
-	print `$dotnet publish --nologo --no-build --configuration $conf --output $target/lib src/pl/plclr/managed/PlClrManaged.sln`;
+	print `$dotnet publish --nologo --no-build --configuration $conf --output $target/lib/managed src/pl/plclr/managed/PlClr.Managed.sln`;
 }
 
 sub DetermineMajorVersion

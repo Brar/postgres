@@ -15,11 +15,11 @@
 
 /* Forward declarations */
 void *get_export(void* lib, const char* name);
-load_assembly_and_get_function_pointer_fn get_dotnet_load_assembly(const char_t* assembly);
+load_assembly_and_get_function_pointer_fn get_dotnet_load_assembly(const clr_char* assembly);
 
 struct lib_args
 {
-    const char_t* message;
+    const clr_char* message;
     int number;
 };
 
@@ -43,19 +43,16 @@ plclr_runtime_host_init(void)
     char buffer[MAXPGPATH];
     size_t buffer_size = MAXPGPATH;
 #ifdef WIN32
-    char_t wide_buffer[MAXPGPATH];
+    clr_char wide_buffer[MAXPGPATH];
 #else
-    char_t* wide_buffer = (char_t*)&buffer;
+    clr_char* wide_buffer = (clr_char*)&buffer;
 #endif
 
     int rc;
     void *lib;
     load_assembly_and_get_function_pointer_fn load_assembly_and_get_function_pointer = NULL;
-    // component_entry_point_fn hello = NULL;
-    // const char_t* dotnet_type = STR("PlClrManaged.Lib, PlClrManaged");
-    // const char_t* dotnet_type_method = STR("Hello");
-    const char_t* dotnet_type = STR("PlClrManaged.Lib, PlClrManaged");
-    const char_t* dotnet_type_method = STR("CompileAndExecute");
+    const clr_char* dotnet_type = STR("PlClr.PlClrMain, PlClr.Managed");
+    const clr_char* dotnet_type_method = STR("CompileFunction");
 
     rc = get_hostfxr_path(wide_buffer, &buffer_size, NULL);
     if (rc != 0)
@@ -75,7 +72,7 @@ plclr_runtime_host_init(void)
 
     buffer[0] = '\0';
     get_lib_path(my_exec_path, buffer);
-    strcat(buffer, "/PlClrManaged.runtimeconfig.json");
+    strcat(buffer, "/managed/PlClr.Managed.runtimeconfig.json");
 
 #ifdef WIN32
     utf8_to_utf16le(buffer, wide_buffer, MAXPGPATH);
@@ -86,34 +83,11 @@ plclr_runtime_host_init(void)
 
     buffer[0] = '\0';
     get_lib_path(my_exec_path, buffer);
-    strcat(buffer, "/PlClrManaged.dll");
+    strcat(buffer, "/managed/PlClr.Managed.dll");
 
 #ifdef WIN32
     utf8_to_utf16le(buffer, wide_buffer, MAXPGPATH);
 #endif
- /*
-    rc = load_assembly_and_get_function_pointer(
-        wide_buffer,
-        dotnet_type,
-        dotnet_type_method,
-        NULL,
-        NULL,
-        (void**)&hello);
-
-    if (rc != 0 || hello == NULL)
-        elog(ERROR, "Function load_assembly_and_get_function_pointer() failed: %x", rc);
-
-    for (int i = 0; i < 3; ++i)
-    {
-        struct lib_args args =
-        {
-            STR("from host!"),
-            i
-        };
-
-        hello(&args, sizeof(args));
-    }
-*/
     rc = load_assembly_and_get_function_pointer(
         wide_buffer,
         dotnet_type,
@@ -136,7 +110,7 @@ get_export(void *lib, const char *name)
     return f;
 }
 
-load_assembly_and_get_function_pointer_fn get_dotnet_load_assembly(const char_t *config_path)
+load_assembly_and_get_function_pointer_fn get_dotnet_load_assembly(const clr_char *config_path)
 {
     // Load .NET Core
     void *load_assembly_and_get_function_pointer = NULL;
