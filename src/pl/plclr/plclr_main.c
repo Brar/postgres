@@ -97,14 +97,11 @@ server_encoding_to_clr_char(const char *input)
 	int			db_encoding = GetDatabaseEncoding();
 	size_t		input_length = strlen(input);
 	size_t		output_length = input_length;
-	const char* bla = pg_enc2gettext_tbl[db_encoding].name;
 	clr_char*	output;
-	UINT		codepage;
+	unsigned	codepage;
 
 #ifdef WIN32
-	const pg_enc2name *p = &pg_enc2name_tbl[db_encoding];
-	codepage = p->codepage;
-	
+	codepage = pg_enc2name_tbl[db_encoding].codepage;
 
 	if (codepage != 0)
 	{
@@ -112,7 +109,7 @@ server_encoding_to_clr_char(const char *input)
 		output_length = MultiByteToWideChar(codepage, 0, input, input_length, output, input_length);
 		output[output_length] = (clr_char) 0;
 	}
-	else if (db_encoding != PG_UTF8 && 0 != strcmp(bla, "UTF-8"))
+	else if (db_encoding != PG_UTF8)
 #else
 	if (db_encoding != PG_UTF8)
 #endif
