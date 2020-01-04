@@ -24,8 +24,10 @@ if exist src\backend\replication\pgoutput\win32ver.rc del /q src\backend\replica
 if exist src\backend\snowball\win32ver.rc del /q src\backend\snowball\win32ver.rc
 if exist src\interfaces\ecpg\test\win32ver.rc del /q src\interfaces\ecpg\test\win32ver.rc
 if exist src\pl\plclr\win32ver.rc del /q src\pl\plclr\win32ver.rc
-if exist src\pl\plclr\managed\obj rd /s /q src\pl\plclr\managed\obj
-if exist src\pl\plclr\managed\bin rd /s /q src\pl\plclr\managed\bin
+if exist src\pl\plclr\managed\src\PlClr.Managed\obj rd /s /q src\pl\plclr\managed\src\PlClr.Managed\obj
+if exist src\pl\plclr\managed\src\PlClr.Managed\bin rd /s /q src\pl\plclr\managed\src\PlClr.Managed\bin
+if exist src\pl\plclr\managed\test\PlClr.Managed.Tests\obj rd /s /q src\pl\plclr\managed\test\PlClr.Managed.Tests\obj
+if exist src\pl\plclr\managed\test\PlClr.Managed.Tests\bin rd /s /q src\pl\plclr\managed\test\PlClr.Managed.Tests\bin
 if exist src\pl\plperl\win32ver.rc del /q src\pl\plperl\win32ver.rc
 if exist src\pl\plpgsql\src\win32ver.rc del /q src\pl\plpgsql\src\win32ver.rc
 if exist src\pl\plpython\win32ver.rc del /q src\pl\plpython\win32ver.rc

@@ -28,6 +28,11 @@ OBJS = \
 	plclr_runtime_host.o \
 	plclr_string.o
 
+# I have no ides why we can't use the pg_enc2name_tbl which is exported from postgres.lib
+# as a workaround we build our own here
+OBJS += \
+	encnames.o
+
 DATA += plclr.control plclr--1.0.sql plclr--unpackaged--1.0.sql
 
 SHLIB_LINK = $(filter -lintl,$(LIBS))
@@ -37,6 +42,7 @@ REGRESS_OPTS = --dbname=$(PL_TESTDB)
 REGRESS = plclr_test
 
 include $(top_srcdir)/src/Makefile.shlib
+backend_src = $(top_srcdir)/src/backend
 
 all: all-lib managed-lib
 
@@ -48,6 +54,10 @@ managed-lib:
 	$(DOTNET) build managed/PlClrManaged.csproj $(DOTNET_FLAGS)
 
 .PHONY: managed-lib
+
+encnames.c: % : $(backend_src)/utils/mb/%
+	rm -f $@ && $(LN_S) $< .
+
 
 install: all install-lib install-data
 
