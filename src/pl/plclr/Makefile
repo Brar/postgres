@@ -50,8 +50,10 @@ all: all-lib managed-lib
 $(OBJS): | submake-generated-headers
 
 managed-lib:
-	sed -i "s/<TargetFramework>netcoreapp3\.0<\/TargetFramework>/<TargetFramework>netcoreapp$(dotnet_runtime_majorversion)\.$(dotnet_runtime_minorversion)<\/TargetFramework>/gi" managed/PlClrManaged.csproj
-	$(DOTNET) build managed/PlClrManaged.csproj $(DOTNET_FLAGS)
+	sed -i "s/<TargetFramework>netcoreapp.\..<\/TargetFramework>/<TargetFramework>netcoreapp$(dotnet_runtime_majorversion)\.$(dotnet_runtime_minorversion)<\/TargetFramework>/gi" managed/src/PlClr.Managed/PlClr.Managed.csproj
+	sed -i "s/<TargetFramework>netcoreapp.\..<\/TargetFramework>/<TargetFramework>netcoreapp$(dotnet_runtime_majorversion)\.$(dotnet_runtime_minorversion)<\/TargetFramework>/gi" managed/test/PlClr.Managed.Tests/PlClr.Managed.Tests.csproj
+	$(DOTNET) build managed/src/PlClr.Managed/PlClr.Managed.csproj $(DOTNET_FLAGS)
+	$(DOTNET) build managed/test/PlClr.Managed.Tests/PlClr.Managed.Tests.csproj $(DOTNET_FLAGS)
 
 .PHONY: managed-lib
 
@@ -62,7 +64,7 @@ encnames.c: % : $(backend_src)/utils/mb/%
 install: all install-lib install-data
 
 installdirs: installdirs-lib
-	$(MKDIR_P) '$(DESTDIR)$(datadir)/extension' '$(DESTDIR)$(includedir_server)' '$(DESTDIR)$(pgxsdir)/src/pl/plclr'
+	$(MKDIR_P) '$(DESTDIR)$(datadir)/extension' '$(DESTDIR)$(includedir_server)' '$(DESTDIR)$(pgxsdir)/src/pl/plclr' '$(DESTDIR)$(libdir)/managed'
 
 uninstall: uninstall-lib uninstall-data
 
@@ -75,11 +77,12 @@ uninstall-data:
 .PHONY: install-data uninstall-data
 
 managed-check-install: temp-install
-	$(DOTNET) publish managed/PlClrManaged.csproj $(DOTNET_FLAGS) -o $(abs_top_builddir)/tmp_install$(libdir)
+	$(DOTNET) publish managed/src/PlClr.Managed/PlClr.Managed.csproj $(DOTNET_FLAGS) -o $(abs_top_builddir)/tmp_install$(libdir)/managed
 
 .PHONY: managed-check-install
 
 check: submake managed-check-install
+	$(DOTNET) test managed/test/PlClr.Managed.Tests/PlClr.Managed.Tests.csproj $(DOTNET_FLAGS)
 	$(pg_regress_check) $(REGRESS_OPTS) $(REGRESS)
 
 installcheck: submake
