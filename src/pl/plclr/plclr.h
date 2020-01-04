@@ -11,14 +11,14 @@
 
 #ifdef WIN32
     #ifdef _WCHAR_T_DEFINED
-        typedef wchar_t char_t;
+        typedef wchar_t clr_char;
     #else
-        typedef unsigned short char_t;
+        typedef unsigned short clr_char;
     #endif
     #define STR(s) L ## s
     #define CH(c) L ## c
 #else
-    typedef char char_t;
+    typedef char clr_char;
     #define STR(s) s
     #define CH(c) c
 #endif
@@ -26,8 +26,8 @@
 typedef struct FunctionCompileInfo
 {
     Oid FunctionOid;
-    const char_t* FunctionName;
-    const char_t* FunctionBody;
+    const clr_char* FunctionName;
+    const clr_char* FunctionBody;
 } FunctionCompileInfo, *FunctionCompileInfoPtr;
 
 int compile_and_execute(FunctionCompileInfoPtr compileInfo);

@@ -1,0 +1,15 @@
+Microsoft (R) COFF/PE Dumper Version 14.24.28314.0
+Copyright (C) Microsoft Corporation.  All rights reserved.
+
+
+Dump of file ..\..\..\Release\postgres\postgres.exe
+
+File Type: EXECUTABLE IMAGE
+
+  Summary
+
+       40000 .data
+       37000 .pdata
+      23C000 .rdata
+        1000 .rsrc
+      487000 .text

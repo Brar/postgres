@@ -268,12 +268,13 @@ sub mkvcbuild
 
 		my $clr_nethostdir = `$dotnet --info` =~ s/^.*Base Path:\s*(\S.*?)sdk.*$/${1}packs\\Microsoft.NETCore.App.Host.win-x64\\$dotnet_runtime_version\\runtimes\\win-x64\\native\\/rs;
 
-		my $plclrManaged = $solution->AddExistingProject('PLs', 'src/pl/plclr/managed/PlClrManaged.csproj');
+		my $plclrManaged = $solution->AddExistingProject('PLs', 'src/pl/plclr/managed/src/PlClr.Managed/PlClr.Managed.csproj');
+		my $plclrManagedTests = $solution->AddExistingProject('PLs', 'src/pl/plclr/managed/test/PlClr.Managed.Tests/PlClr.Managed.Tests.csproj');
 		my $plclr = $solution->AddProject('plclr', 'dll', 'PLs', 'src/pl/plclr');
 		$plclr->AddIncludeDir($clr_nethostdir);
 		$plclr->AddLibrary($clr_nethostdir . "nethost.lib");
 		$plclr->AddReference($postgres);
-		$solution->AddProjectDependency($plclr, $plclrManaged)
+		$solution->AddProjectDependency($plclr, $plclrManagedTests)
 
 		# This doens't currently work due to a .NET framework mismatch
 		# that has yet to be investigated but it is probably the way to
