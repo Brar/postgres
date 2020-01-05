@@ -31,7 +31,7 @@ public static class _{func.FunctionOid}_
             if (result.Success)
                 return Assembly.Load(ms.ToArray());
 
-            throw new Exception(result.ToString());
+            throw new Exception(string.Join(Environment.NewLine, result.Diagnostics));
         }
     }
 }
