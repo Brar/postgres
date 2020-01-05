@@ -98,9 +98,9 @@ server_encoding_to_clr_char(const char *input)
 	size_t		input_length = strlen(input);
 	size_t		output_length = input_length;
 	clr_char*	output;
-	unsigned	codepage;
 
 #ifdef WIN32
+	unsigned	codepage;
 	codepage = pg_enc2name_tbl[db_encoding].codepage;
 
 	if (codepage != 0)
