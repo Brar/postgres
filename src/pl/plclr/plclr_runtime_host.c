@@ -14,14 +14,24 @@
 #include <string.h>
 
 /* Forward declarations */
-void *get_export(void* lib, const char* name);
-load_assembly_and_get_function_pointer_fn get_dotnet_load_assembly(const clr_char* assembly);
+static void *get_export(void* lib, const char* name);
+static load_assembly_and_get_function_pointer_fn get_dotnet_load_assembly(const clr_char* assembly);
+static void plclr_elog(int, char*);
 
-struct lib_args
+static void
+plclr_elog(int elevel, char* message)
 {
-    const clr_char* message;
-    int number;
-};
+	elog(elevel, message);
+}
+
+typedef struct SetupInfo
+{
+    void* (*PallocFunctionPtr)(Size);
+    void* (*Palloc0FunctionPtr)(Size);
+    void* (*RePallocFunctionPtr)(void*, Size);
+    void (*PFreeFunctionPtr)(void*);
+    void (*ELogFunctionPtr)(int, char*);
+} DelegateSetupInfo;
 
 /* Globals to hold hostfxr exports */
 hostfxr_initialize_for_runtime_config_fn hostfxr_initialize;
@@ -100,7 +110,7 @@ plclr_runtime_host_init(void)
         elog(ERROR, "Function load_assembly_and_get_function_pointer() failed: %x", rc);
 }
 
-void*
+static void*
 get_export(void *lib, const char *name)
 {
     void *f = dlsym(lib, name);
@@ -110,7 +120,7 @@ get_export(void *lib, const char *name)
     return f;
 }
 
-load_assembly_and_get_function_pointer_fn get_dotnet_load_assembly(const clr_char *config_path)
+static load_assembly_and_get_function_pointer_fn get_dotnet_load_assembly(const clr_char *config_path)
 {
     // Load .NET Core
     void *load_assembly_and_get_function_pointer = NULL;

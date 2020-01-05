@@ -1,17 +1,21 @@
+using System;
+using System.IO;
 using NUnit.Framework;
-using System.Runtime.InteropServices;
 
 namespace PlClr.Managed.Tests
 {
     public class PlClrMainTests : TestBase
     {
         [Test]
-        public void CompileSimple()
+        public void SetupTest()
         {
-            FunctionCompileInfo(1, "test", "return 1;", (fci, length) =>
-            {
-                PlClrMain.CompileFunction(fci, length);
-            });
+            var result = Setup(PlClrMain.Setup);
+
+            Assert.That(
+                result.TotalBytesPalloc + result.TotalBytesPalloc0 + result.TotalBytesRepalloc -
+                result.TotalBytesPfree - result.TotalBytesRepallocFree, Is.Zero);
+            Assert.That(result.StdOut, Is.Empty);
+            Assert.That(result.StdErr, Is.Empty);
         }
     }
 }
