@@ -107,7 +107,6 @@ server_encoding_to_clr_char(const char *input)
 	{
 		output = (clr_char *) palloc(sizeof(clr_char) * (input_length + 1));
 		output_length = MultiByteToWideChar(codepage, 0, input, input_length, output, input_length);
-		output[output_length] = (clr_char) 0;
 	}
 	else if (db_encoding != PG_UTF8)
 #else
@@ -138,7 +137,6 @@ server_encoding_to_clr_char(const char *input)
 #else
 		memcpy(output, input, input_length);
 #endif
-		output[output_length] = (clr_char) 0;
 
 		if (utf8 != input)
 			pfree(utf8);
@@ -151,6 +149,8 @@ server_encoding_to_clr_char(const char *input)
 		output = (clr_char *) palloc(sizeof(clr_char) * (input_length + 1));
 		memcpy(output, input, input_length);
 	}
+
+	output[output_length] = (clr_char) 0;
 
 	if (output_length == 0 && input_length > 0)
 	{
