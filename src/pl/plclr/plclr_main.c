@@ -77,9 +77,7 @@ plclr_call_handler(PG_FUNCTION_ARGS)
 
             retval = (Datum)compile_and_execute((FunctionCompileInfoPtr)&compileInfo);
 
-        	pfree((void*)compileInfo.FunctionName);
-        	pfree((void*)compileInfo.FunctionBody);
-        	ReleaseSysCache(procTup);
+			ReleaseSysCache(procTup);
          }
     }
     PG_CATCH();
