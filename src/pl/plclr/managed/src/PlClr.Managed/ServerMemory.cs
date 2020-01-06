@@ -1,6 +1,4 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Text;
 
 namespace PlClr
 {
@@ -8,16 +6,16 @@ namespace PlClr
     {
         private static bool _isInitialized;
         private static readonly object LockObject = new object();
-        private static Func<ulong, IntPtr>? _pallocDelegate;
-        private static Func<ulong, IntPtr>? _palloc0Delegate;
-        private static Func<IntPtr, ulong, IntPtr>? _repallocDelegate;
-        private static Action<IntPtr>? _pfreeDelegate;
+        private static PAllocDelegate? _pallocDelegate;
+        private static PAllocDelegate? _palloc0Delegate;
+        private static RePAllocDelegate? _repallocDelegate;
+        private static PFreeDelegate? _pfreeDelegate;
 
         internal static void Initialize(
-            Func<ulong, IntPtr> pallocDelegate,
-            Func<ulong, IntPtr> palloc0Delegate,
-            Func<IntPtr, ulong, IntPtr> repallocDelegate,
-            Action<IntPtr> pfreeDelegate
+            PAllocDelegate pallocDelegate,
+            PAllocDelegate palloc0Delegate,
+            RePAllocDelegate repallocDelegate,
+            PFreeDelegate pfreeDelegate
         )
         {
             if (_isInitialized)

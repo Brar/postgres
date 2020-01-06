@@ -1,9 +1,14 @@
 ﻿using System;
-using System.Reflection;
 using System.Runtime.InteropServices;
 
 namespace PlClr
 {
+    public delegate IntPtr PAllocDelegate(ulong size);
+    public delegate IntPtr RePAllocDelegate(IntPtr ptr, ulong size);
+    public delegate void PFreeDelegate(IntPtr ptr);
+    public delegate void ELogDelegate(int level, IntPtr message);
+    public delegate IntPtr CompileDelegate(IntPtr ptr, int size);
+
     public static class PlClrMain
     {
         #region Private structs for marshalling
@@ -50,7 +55,7 @@ namespace PlClr
 
         #endregion
 
-        private static readonly Func<IntPtr, int, IntPtr> CompileDelegate = CompileFunction;
+        private static readonly CompileDelegate CompileDelegate = Compile;
 
         /// <summary>
         /// This is the initial setup Method.
@@ -71,35 +76,35 @@ namespace PlClr
 
                 if (clrSetupInfo.PallocFunctionPtr == IntPtr.Zero)
                 {
-                    Console.Error.WriteLine($"Field {nameof(clrSetupInfo.PallocFunctionPtr)} in struct {nameof(ClrSetupInfo)} is NULL");
+                    Console.Error.WriteLine($"Field {nameof(clrSetupInfo.PallocFunctionPtr)} in struct {nameof(ClrSetupInfo)} must not be NULL");
                     return IntPtr.Zero;
                 }
                 if (clrSetupInfo.Palloc0FunctionPtr == IntPtr.Zero)
                 {
-                    Console.Error.WriteLine($"Field {nameof(clrSetupInfo.Palloc0FunctionPtr)} in struct {nameof(ClrSetupInfo)} is NULL");
+                    Console.Error.WriteLine($"Field {nameof(clrSetupInfo.Palloc0FunctionPtr)} in struct {nameof(ClrSetupInfo)} must not be NULL");
                     return IntPtr.Zero;
                 }
                 if (clrSetupInfo.RePallocFunctionPtr == IntPtr.Zero)
                 {
-                    Console.Error.WriteLine($"Field {nameof(clrSetupInfo.RePallocFunctionPtr)} in struct {nameof(ClrSetupInfo)} is NULL");
+                    Console.Error.WriteLine($"Field {nameof(clrSetupInfo.RePallocFunctionPtr)} in struct {nameof(ClrSetupInfo)} must not be NULL");
                     return IntPtr.Zero;
                 }
                 if (clrSetupInfo.PFreeFunctionPtr == IntPtr.Zero)
                 {
-                    Console.Error.WriteLine($"Field {nameof(clrSetupInfo.PFreeFunctionPtr)} in struct {nameof(ClrSetupInfo)} is NULL");
+                    Console.Error.WriteLine($"Field {nameof(clrSetupInfo.PFreeFunctionPtr)} in struct {nameof(ClrSetupInfo)} must not be NULL");
                     return IntPtr.Zero;
                 }
                 if (clrSetupInfo.ELogFunctionPtr == IntPtr.Zero)
                 {
-                    Console.Error.WriteLine($"Field {nameof(clrSetupInfo.ELogFunctionPtr)} in struct {nameof(ClrSetupInfo)} is NULL");
+                    Console.Error.WriteLine($"Field {nameof(clrSetupInfo.ELogFunctionPtr)} in struct {nameof(ClrSetupInfo)} must not be NULL");
                     return IntPtr.Zero;
                 }
 
-                var palloc = System.Runtime.InteropServices.Marshal.GetDelegateForFunctionPointer<Func<ulong, IntPtr>>(clrSetupInfo.PallocFunctionPtr);
-                var palloc0 = System.Runtime.InteropServices.Marshal.GetDelegateForFunctionPointer<Func<ulong, IntPtr>>(clrSetupInfo.Palloc0FunctionPtr);
-                var repalloc = System.Runtime.InteropServices.Marshal.GetDelegateForFunctionPointer<Func<IntPtr, ulong, IntPtr>>(clrSetupInfo.RePallocFunctionPtr);
-                var pfree = System.Runtime.InteropServices.Marshal.GetDelegateForFunctionPointer<Action<IntPtr>>(clrSetupInfo.PFreeFunctionPtr);
-                var elog = System.Runtime.InteropServices.Marshal.GetDelegateForFunctionPointer<Action<int, IntPtr>>(clrSetupInfo.ELogFunctionPtr);
+                var palloc = System.Runtime.InteropServices.Marshal.GetDelegateForFunctionPointer<PAllocDelegate>(clrSetupInfo.PallocFunctionPtr);
+                var palloc0 = System.Runtime.InteropServices.Marshal.GetDelegateForFunctionPointer<PAllocDelegate>(clrSetupInfo.Palloc0FunctionPtr);
+                var repalloc = System.Runtime.InteropServices.Marshal.GetDelegateForFunctionPointer<RePAllocDelegate>(clrSetupInfo.RePallocFunctionPtr);
+                var pfree = System.Runtime.InteropServices.Marshal.GetDelegateForFunctionPointer<PFreeDelegate>(clrSetupInfo.PFreeFunctionPtr);
+                var elog = System.Runtime.InteropServices.Marshal.GetDelegateForFunctionPointer<ELogDelegate>(clrSetupInfo.ELogFunctionPtr);
 
                 ServerMemory.Initialize(palloc, palloc0, repalloc, pfree);
                 ServerLog.Initialize(elog);
@@ -120,7 +125,7 @@ namespace PlClr
             }
         }
 
-        public static IntPtr CompileFunction(IntPtr arg, int argLength)
+        public static IntPtr Compile(IntPtr arg, int argLength)
         {
             if (argLength < System.Runtime.InteropServices.Marshal.SizeOf(typeof(FunctionCompileInfoPrivate)))
                 return IntPtr.Zero;
