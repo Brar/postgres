@@ -23,7 +23,7 @@ namespace PlClr
         public static IntPtr StringToPtrPalloc(string? str)
             => StringToPtrPalloc(str, false);
 
-        internal static unsafe IntPtr StringToPtrPalloc(string? str, bool toClrString)
+        public static unsafe IntPtr StringToPtrPalloc(string? str, bool toClrString)
         {
             if (str == null)
                 return IntPtr.Zero;
