@@ -1,16 +1,12 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
-
-namespace PlClr
+﻿namespace PlClr
 {
     public static class ServerLog
     {
         private static bool _isInitialized;
         private static readonly object LockObject = new object();
-        private static Action<int, IntPtr>? _elogDelegate;
+        private static ELogDelegate? _elogDelegate;
 
-        internal static void Initialize(Action<int, IntPtr> elogDelegate)
+        internal static void Initialize(ELogDelegate elogDelegate)
         {
             if (_isInitialized)
                 return;
