@@ -27,6 +27,54 @@ namespace PlClr.Managed.Tests
         }
 
         [Test]
+        public void SetupNullPtr()
+        {
+            var p = new SetupParameters
+            {
+                PallocFunctionPtrIsNull = true
+            };
+
+            var result = Setup(p, (ptr, len) =>
+            {
+                var res = PlClrMain.Setup(IntPtr.Zero, len);
+                Assert.That(res, Is.EqualTo(IntPtr.Zero));
+                return res;
+            });
+
+            Assert.That(result.TotalBytesPalloc, Is.EqualTo(0));
+            Assert.That(result.TotalBytesPalloc0, Is.Zero);
+            Assert.That(result.TotalBytesRepalloc, Is.Zero);
+            Assert.That(result.TotalBytesRepallocFree, Is.Zero);
+            Assert.That(result.TotalBytesPfree, Is.EqualTo(0));
+            Assert.That(result.StdOut, Is.Empty);
+            Assert.That(result.StdErr, Is.EqualTo($"Argument arg must not be NULL{Environment.NewLine}"));
+        }
+
+        [Test]
+        public void SetupZeroLength()
+        {
+            var p = new SetupParameters
+            {
+                PallocFunctionPtrIsNull = true
+            };
+
+            var result = Setup(p, (ptr, len) =>
+            {
+                var res = PlClrMain.Setup(ptr, 0);
+                Assert.That(res, Is.EqualTo(IntPtr.Zero));
+                return res;
+            });
+
+            Assert.That(result.TotalBytesPalloc, Is.EqualTo(0));
+            Assert.That(result.TotalBytesPalloc0, Is.Zero);
+            Assert.That(result.TotalBytesRepalloc, Is.Zero);
+            Assert.That(result.TotalBytesRepallocFree, Is.Zero);
+            Assert.That(result.TotalBytesPfree, Is.EqualTo(0));
+            Assert.That(result.StdOut, Is.Empty);
+            Assert.That(result.StdErr, Is.EqualTo($"Argument argLength is 0 but is expected to be greater than or equal to 40{Environment.NewLine}"));
+        }
+
+        [Test]
         public void SetupNoPallocPtr()
         {
             var p = new SetupParameters

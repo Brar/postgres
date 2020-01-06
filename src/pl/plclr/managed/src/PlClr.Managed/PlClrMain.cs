@@ -69,8 +69,19 @@ namespace PlClr
         {
             try
             {
-                if (argLength < System.Runtime.InteropServices.Marshal.SizeOf(typeof(ClrSetupInfo)))
+                if (arg == IntPtr.Zero)
+                {
+                    Console.Error.WriteLine(
+                        $"Argument {nameof(arg)} must not be NULL");
                     return IntPtr.Zero;
+                }
+
+                if (argLength < System.Runtime.InteropServices.Marshal.SizeOf<ClrSetupInfo>())
+                {
+                    Console.Error.WriteLine(
+                        $"Argument {nameof(argLength)} is {argLength} but is expected to be greater than or equal to {System.Runtime.InteropServices.Marshal.SizeOf<ClrSetupInfo>()}");
+                    return IntPtr.Zero;
+                }
 
                 var clrSetupInfo = System.Runtime.InteropServices.Marshal.PtrToStructure<ClrSetupInfo>(arg);
 
