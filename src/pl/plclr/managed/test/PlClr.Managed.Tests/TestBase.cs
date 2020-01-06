@@ -169,10 +169,13 @@ namespace PlClr.Managed.Tests
 
                 FunctionCompileInfoPrivate fci;
                 fci.FunctionOid = compileParameters.FunctionOid;
-                fci.FunctionNamePtr = Marshal.StringToPtrPalloc(compileParameters.FunctionName);
-                fci.FunctionBodyPtr = Marshal.StringToPtrPalloc(compileParameters.FunctionBody);
 
-                var fciPtr = System.Runtime.InteropServices.Marshal.AllocCoTaskMem(System.Runtime.InteropServices.Marshal.SizeOf<FunctionCompileInfoPrivate>());
+                // We have to palloc ClrStrings (UTF-16LE on Windows, UTF-8 elsewhere) here as this is what
+                // the managed part of PlClr expects whenever it receives a string from the unmanaged world
+                fci.FunctionNamePtr = Marshal.StringToPtrPalloc(compileParameters.FunctionName, true);
+                fci.FunctionBodyPtr = Marshal.StringToPtrPalloc(compileParameters.FunctionBody, true);
+
+                var fciPtr = ServerMemory.Palloc((ulong)System.Runtime.InteropServices.Marshal.SizeOf<FunctionCompileInfoPrivate>());
                 System.Runtime.InteropServices.Marshal.StructureToPtr(fci, fciPtr, false);
 
                 var compileResultPtr = compileFunc(fciPtr, System.Runtime.InteropServices.Marshal.SizeOf<FunctionCompileInfoPrivate>());
