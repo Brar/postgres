@@ -24,6 +24,7 @@ namespace PlClr.Managed.Tests
             Assert.That(result.TotalBytesRepallocFree, Is.Zero);
             Assert.That(result.StdOut, Is.Empty);
             Assert.That(result.StdErr, Is.Empty);
+            Assert.That(result.ElogMessages, Is.Empty);
         }
 
         [Test]
@@ -48,6 +49,7 @@ namespace PlClr.Managed.Tests
             Assert.That(result.TotalBytesPfree, Is.EqualTo(0));
             Assert.That(result.StdOut, Is.Empty);
             Assert.That(result.StdErr, Is.EqualTo($"Argument arg must not be NULL{Environment.NewLine}"));
+            Assert.That(result.ElogMessages, Is.Empty);
         }
 
         [Test]
@@ -72,6 +74,7 @@ namespace PlClr.Managed.Tests
             Assert.That(result.TotalBytesPfree, Is.EqualTo(0));
             Assert.That(result.StdOut, Is.Empty);
             Assert.That(result.StdErr, Is.EqualTo($"Argument argLength is 0 but is expected to be greater than or equal to 40{Environment.NewLine}"));
+            Assert.That(result.ElogMessages, Is.Empty);
         }
 
         [Test]
@@ -96,6 +99,7 @@ namespace PlClr.Managed.Tests
             Assert.That(result.TotalBytesPfree, Is.EqualTo(0));
             Assert.That(result.StdOut, Is.Empty);
             Assert.That(result.StdErr, Is.EqualTo($"Field PallocFunctionPtr in struct ClrSetupInfo must not be NULL{Environment.NewLine}"));
+            Assert.That(result.ElogMessages, Is.Empty);
         }
 
         [Test]
@@ -120,6 +124,7 @@ namespace PlClr.Managed.Tests
             Assert.That(result.TotalBytesPfree, Is.EqualTo(0));
             Assert.That(result.StdOut, Is.Empty);
             Assert.That(result.StdErr, Is.EqualTo($"Field Palloc0FunctionPtr in struct ClrSetupInfo must not be NULL{Environment.NewLine}"));
+            Assert.That(result.ElogMessages, Is.Empty);
         }
 
         [Test]
@@ -144,6 +149,7 @@ namespace PlClr.Managed.Tests
             Assert.That(result.TotalBytesPfree, Is.EqualTo(0));
             Assert.That(result.StdOut, Is.Empty);
             Assert.That(result.StdErr, Is.EqualTo($"Field RePallocFunctionPtr in struct ClrSetupInfo must not be NULL{Environment.NewLine}"));
+            Assert.That(result.ElogMessages, Is.Empty);
         }
 
         [Test]
@@ -168,6 +174,7 @@ namespace PlClr.Managed.Tests
             Assert.That(result.TotalBytesPfree, Is.EqualTo(0));
             Assert.That(result.StdOut, Is.Empty);
             Assert.That(result.StdErr, Is.EqualTo($"Field PFreeFunctionPtr in struct ClrSetupInfo must not be NULL{Environment.NewLine}"));
+            Assert.That(result.ElogMessages, Is.Empty);
         }
 
         [Test]
@@ -192,6 +199,7 @@ namespace PlClr.Managed.Tests
             Assert.That(result.TotalBytesPfree, Is.EqualTo(0));
             Assert.That(result.StdOut, Is.Empty);
             Assert.That(result.StdErr, Is.EqualTo($"Field ELogFunctionPtr in struct ClrSetupInfo must not be NULL{Environment.NewLine}"));
+            Assert.That(result.ElogMessages, Is.Empty);
         }
 
         [Test]
