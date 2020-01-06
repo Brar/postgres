@@ -1,8 +1,8 @@
-﻿using System;
+﻿using NUnit.Framework;
+using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Runtime.InteropServices;
-using NUnit.Framework;
 
 namespace PlClr.Managed.Tests
 {
@@ -26,12 +26,19 @@ namespace PlClr.Managed.Tests
             public IntPtr ELogFunctionPtr;
         }
 
-        private delegate IntPtr PallocDelegate(ulong size);
-        private delegate IntPtr RepallocDelegate(IntPtr ptr, ulong size);
-        private delegate void PfreeDelegate(IntPtr ptr);
-        private delegate void ElogDelegate(int level, IntPtr message);
+        [StructLayout(LayoutKind.Sequential)]
+        private struct HostSetupInfoPrivate
+        {
+            public IntPtr CompileFunctionPtr;
+        }
 
-        protected static SetupResult Setup(Func<IntPtr, int, IntPtr> setupInfoAction)
+        protected static SetupResult Setup(SetupParameters setupParameters, Func<IntPtr, int, IntPtr> setupFunc)
+            => Setup(setupParameters, setupFunc, null, null).setupResult!;
+
+        protected static CompileResult Compile(CompileParameters compileParameters, Func<IntPtr, int, IntPtr> compileFunc)
+            => Setup(new SetupParameters(), PlClrMain.Setup, compileParameters, compileFunc).compileResult!;
+
+        private static (SetupResult? setupResult, CompileResult? compileResult) Setup(SetupParameters setupParameters, Func<IntPtr, int, IntPtr> setupInfoFunc, CompileParameters? compileParameters, Func<IntPtr, int, IntPtr>? compileFunc)
         {
             var pallocPtrs = new Dictionary<IntPtr, ulong>();
             var palloc0Ptrs = new Dictionary<IntPtr, ulong>();
@@ -109,16 +116,16 @@ namespace PlClr.Managed.Tests
             }
 
             ClrSetupInfoPrivate setupInfo;
-            setupInfo.PallocFunctionPtr =
-                System.Runtime.InteropServices.Marshal.GetFunctionPointerForDelegate<PallocDelegate>(Palloc);
-            setupInfo.Palloc0FunctionPtr =
-                System.Runtime.InteropServices.Marshal.GetFunctionPointerForDelegate<PallocDelegate>(Palloc0);
-            setupInfo.RePallocFunctionPtr =
-                System.Runtime.InteropServices.Marshal.GetFunctionPointerForDelegate<RepallocDelegate>(Repalloc);
-            setupInfo.PFreeFunctionPtr =
-                System.Runtime.InteropServices.Marshal.GetFunctionPointerForDelegate<PfreeDelegate>(Pfree);
-            setupInfo.ELogFunctionPtr =
-                System.Runtime.InteropServices.Marshal.GetFunctionPointerForDelegate<ElogDelegate>(Elog);
+            setupInfo.PallocFunctionPtr = setupParameters.PallocFunctionPtrIsNull ? IntPtr.Zero : 
+                System.Runtime.InteropServices.Marshal.GetFunctionPointerForDelegate<PAllocDelegate>(Palloc);
+            setupInfo.Palloc0FunctionPtr = setupParameters.Palloc0FunctionPtrIsNull ? IntPtr.Zero : 
+                System.Runtime.InteropServices.Marshal.GetFunctionPointerForDelegate<PAllocDelegate>(Palloc0);
+            setupInfo.RePallocFunctionPtr = setupParameters.RePallocFunctionPtrIsNull ? IntPtr.Zero : 
+                System.Runtime.InteropServices.Marshal.GetFunctionPointerForDelegate<RePAllocDelegate>(Repalloc);
+            setupInfo.PFreeFunctionPtr = setupParameters.PFreeFunctionPtrIsNull ? IntPtr.Zero : 
+                System.Runtime.InteropServices.Marshal.GetFunctionPointerForDelegate<PFreeDelegate>(Pfree);
+            setupInfo.ELogFunctionPtr = setupParameters.ELogFunctionPtrIsNull ? IntPtr.Zero : 
+                System.Runtime.InteropServices.Marshal.GetFunctionPointerForDelegate<ELogDelegate>(Elog);
 
             var ptr = System.Runtime.InteropServices.Marshal.AllocCoTaskMem(System.Runtime.InteropServices.Marshal
                 .SizeOf<ClrSetupInfoPrivate>());
@@ -133,13 +140,52 @@ namespace PlClr.Managed.Tests
                 Console.SetOut(consoleOut);
                 Console.SetError(consoleError);
 
-                setupInfoAction(ptr, System.Runtime.InteropServices.Marshal.SizeOf<ClrSetupInfoPrivate>());
+                var setupResultPtr = setupInfoFunc(ptr, System.Runtime.InteropServices.Marshal.SizeOf<ClrSetupInfoPrivate>());
+
+                if (setupResultPtr == IntPtr.Zero)
+                    return CreateResult(false);
+
+                var hostSetupInfo =
+                    System.Runtime.InteropServices.Marshal.PtrToStructure<HostSetupInfoPrivate>(setupResultPtr);
+                Pfree(setupResultPtr);
+
+                Assert.That(hostSetupInfo.CompileFunctionPtr, Is.Not.EqualTo(IntPtr.Zero));
+
+                var d = System.Runtime.InteropServices.Marshal.GetDelegateForFunctionPointer<CompileDelegate>(
+                    hostSetupInfo.CompileFunctionPtr);
+
+                Assert.That(d, Is.EqualTo((CompileDelegate)PlClrMain.Compile));
 
                 Assert.That(pallocPtrs, Is.Empty);
                 Assert.That(palloc0Ptrs, Is.Empty);
 
-                return new SetupResult(elogMessages, totalBytesPalloc, totalBytesPalloc0, totalBytesRepalloc,
-                    totalBytesRepallocFree, totalBytesPfree, consoleOut.ToString(), consoleError.ToString());
+                // If we reach this point, Setup has completed successfully and we can compile
+                // At this point could use our delegate d() or PlClrMain.Compile() but the unmanaged
+                // code obviously has to use the delegate.
+                // For the Setup tests we're done here but for the Compile tests, everything until now
+                // has happened silently in the background and this is the place where we call our compileFunc
+                if (compileFunc == null || compileParameters == null)
+                    return CreateResult(false);
+
+                FunctionCompileInfoPrivate fci;
+                fci.FunctionOid = compileParameters.FunctionOid;
+                fci.FunctionNamePtr = Marshal.StringToPtrPalloc(compileParameters.FunctionName);
+                fci.FunctionBodyPtr = Marshal.StringToPtrPalloc(compileParameters.FunctionBody);
+
+                var fciPtr = System.Runtime.InteropServices.Marshal.AllocCoTaskMem(System.Runtime.InteropServices.Marshal.SizeOf<FunctionCompileInfoPrivate>());
+                System.Runtime.InteropServices.Marshal.StructureToPtr(fci, fciPtr, false);
+
+                var compileResultPtr = compileFunc(fciPtr, System.Runtime.InteropServices.Marshal.SizeOf<FunctionCompileInfoPrivate>());
+                if (compileResultPtr == IntPtr.Zero)
+                    return CreateResult(true);
+
+                // ToDo: At the moment Compile doesn't return anything useful but this has to change next
+
+                return CreateResult(true);
+
+                (SetupResult? setupResult, CompileResult? compileResult) CreateResult(bool createCompileResult)
+                    => createCompileResult ? ((SetupResult?)null, new CompileResult()) : (new SetupResult(elogMessages, totalBytesPalloc, totalBytesPalloc0, totalBytesRepalloc,
+                        totalBytesRepallocFree, totalBytesPfree, consoleOut.ToString(), consoleError.ToString()), (CompileResult?)null);
             }
             finally
             {
@@ -158,29 +204,5 @@ namespace PlClr.Managed.Tests
             }
         }
 
-        protected static void FunctionCompileInfo(uint oid, string functionName, string functionBody, Action<IntPtr, int> functionCompileInfo)
-        {
-            FunctionCompileInfoPrivate fci;
-            fci.FunctionOid = oid;
-            fci.FunctionNamePtr = StringToPointer(functionName);
-            fci.FunctionBodyPtr = StringToPointer(functionBody);
-
-            var ptr = System.Runtime.InteropServices.Marshal.AllocCoTaskMem(System.Runtime.InteropServices.Marshal.SizeOf<FunctionCompileInfoPrivate>());
-            System.Runtime.InteropServices.Marshal.StructureToPtr(fci, ptr, false);
-
-            try
-            {
-                functionCompileInfo(ptr, System.Runtime.InteropServices.Marshal.SizeOf<FunctionCompileInfoPrivate>());
-            }
-            finally
-            {
-                System.Runtime.InteropServices.Marshal.FreeCoTaskMem(fci.FunctionNamePtr);
-                System.Runtime.InteropServices.Marshal.FreeCoTaskMem(fci.FunctionBodyPtr);
-                System.Runtime.InteropServices.Marshal.FreeCoTaskMem(ptr);
-            }
-
-            static IntPtr StringToPointer(string value)
-                => Environment.OSVersion.Platform == PlatformID.Win32NT ? System.Runtime.InteropServices.Marshal.StringToCoTaskMemUni(value) : System.Runtime.InteropServices.Marshal.StringToCoTaskMemUTF8(value);
-        }
     }
 }
