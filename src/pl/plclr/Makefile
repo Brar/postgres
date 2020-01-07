@@ -95,4 +95,4 @@ submake:
 clean distclean: clean-lib
 	rm -f $(OBJS)
 	rm -rf $(pg_regress_clean_files)
-	$(DOTNET) clean managed/PlClrManaged.csproj $(DOTNET_FLAGS)
+	$(DOTNET) clean managed/PlClr.Managed.sln $(DOTNET_FLAGS)

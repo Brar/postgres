@@ -20,7 +20,7 @@ typedef struct ClrSetupInfo
     void* (*Palloc0FunctionPtr)(Size);
     void* (*RePallocFunctionPtr)(void*, Size);
     void (*PFreeFunctionPtr)(void*);
-    void (*ELogFunctionPtr)(int, char*);
+    void (*ELogFunctionPtr)(int, const char*);
 } ClrSetupInfo, *ClrSetupInfoPtr;
 
 typedef struct HostSetupInfo
@@ -34,7 +34,7 @@ typedef void* (CORECLR_DELEGATE_CALLTYPE *PlClrMainDelegate)(void *arg, int32_t 
 static void* open_dynamic_library(const clr_char* path);
 static char* get_last_dynamic_library_error(void);
 static void* get_export(void* lib, const char* name);
-static void plclr_elog(int, char*);
+static void plclr_elog(int, const char*);
 
 /* Globals to hold managed exports */
 static hostfxr_close_fn hostfxr_close;
@@ -49,15 +49,16 @@ void* plclr_compile(FunctionCompileInfoPtr compileInfo)
 void
 plclr_runtime_host_init(void)
 {
-    char buffer[MAXPGPATH];
-    size_t buffer_size = MAXPGPATH;
 	hostfxr_initialize_for_runtime_config_fn hostfxr_initialize;
 	hostfxr_get_runtime_delegate_fn hostfxr_get_runtime_delegate;
 	PlClrMainDelegate PlClrMain_Setup;
+    ClrSetupInfoPtr setupInfo;
+    char buffer[MAXPGPATH];
+    size_t buffer_size = MAXPGPATH;
 
 	/*
 	 * On Windows we need a second buffer to store the UTF-16LE bytes
-	 * we need to convert our strings from/to elsewhere UTF-8 is fine
+	 * we need to convert our strings from/to. Elsewhere UTF-8 is fine
 	 * so our second buffer simply points to the first one
 	 */
 #ifdef WIN32
@@ -132,7 +133,7 @@ plclr_runtime_host_init(void)
     if (rc != 0 || PlClrMain_Setup == NULL)
         elog(ERROR, "Function load_assembly_and_get_function_pointer() failed: %x", rc);
 
-	ClrSetupInfoPtr setupInfo = palloc(sizeof(ClrSetupInfo));
+	setupInfo = palloc(sizeof(ClrSetupInfo));
 
 	setupInfo->ELogFunctionPtr = plclr_elog;
 	setupInfo->PFreeFunctionPtr = pfree;
@@ -156,9 +157,9 @@ get_export(void *lib, const char *name)
     return f;
 }
 
+#ifdef WIN32
 static char last_dynamic_library_error[512];
 
-#ifdef WIN32
 static void
 set_last_dynamic_library_error(void)
 {
@@ -214,7 +215,7 @@ open_dynamic_library(const clr_char* path)
 
 #else
 	void* h;
-	h = dlopen(buffer, RTLD_LAZY | RTLD_LOCAL);
+	h = dlopen(path, RTLD_LAZY | RTLD_LOCAL);
 	return h;
 #endif
 }
@@ -233,8 +234,8 @@ get_last_dynamic_library_error(void)
 }
 
 static void
-plclr_elog(int elevel, char* message)
+plclr_elog(int elevel, const char* message)
 {
-	elog(elevel, message);
+	elog(elevel, "%s", message);
 	/* hostfxr_close(cxt); */
 }
