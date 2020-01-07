@@ -30,6 +30,6 @@ typedef struct FunctionCompileInfo
     const clr_char* FunctionBody;
 } FunctionCompileInfo, *FunctionCompileInfoPtr;
 
-int compile_and_execute(FunctionCompileInfoPtr compileInfo);
+void* plclr_compile(FunctionCompileInfoPtr compileInfo);
 
 #endif // PLCLR_H
