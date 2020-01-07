@@ -6,10 +6,10 @@ namespace PlClr
     public static class Marshal
     {
 
-        public static string? PtrToStringPFree(IntPtr ptr, string argName)
+        public static string? PtrToStringPFree(IntPtr ptr)
         {
             if (ptr == IntPtr.Zero)
-                throw new ArgumentNullException(argName);
+                return null;
 
             var result = Environment.OSVersion.Platform == PlatformID.Win32NT
                 ? System.Runtime.InteropServices.Marshal.PtrToStringUni(ptr)

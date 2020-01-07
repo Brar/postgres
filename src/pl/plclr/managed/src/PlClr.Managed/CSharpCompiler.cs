@@ -15,7 +15,7 @@ namespace PlClr
             var tree = CSharpSyntaxTree.ParseText(@$"
 public static class _{func.FunctionOid}_
 {{
-    public static int {func.FunctionName}()
+    public static void {func.FunctionName}()
     {{
         {func.FunctionBody}
     }}   

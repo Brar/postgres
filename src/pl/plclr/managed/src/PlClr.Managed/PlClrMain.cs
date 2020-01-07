@@ -22,6 +22,11 @@ namespace PlClr
             public uint FunctionOid;
             public IntPtr FunctionNamePtr;
             public IntPtr FunctionBodyPtr;
+            public int NumberOfArguments;
+            public IntPtr ArgumentTypes;
+            public IntPtr ArgumentNames;
+            public IntPtr ArgumentModes;
+
         }
 
         [StructLayout(LayoutKind.Sequential)]
@@ -126,7 +131,7 @@ namespace PlClr
                     System.Runtime.InteropServices.Marshal.GetFunctionPointerForDelegate(CompileDelegate);
 
                 var size = System.Runtime.InteropServices.Marshal.SizeOf<HostSetupInfo>();
-                var ptr = ServerMemory.Palloc((ulong) size);
+                var ptr = ServerMemory.Palloc((ulong)size);
                 System.Runtime.InteropServices.Marshal.StructureToPtr(hostSetupInfo, ptr, false);
                 return ptr;
             }
@@ -137,7 +142,7 @@ namespace PlClr
             }
         }
 
-        public static IntPtr Compile(IntPtr arg, int argLength)
+        public static unsafe IntPtr Compile(IntPtr arg, int argLength)
         {
             if (argLength < System.Runtime.InteropServices.Marshal.SizeOf(typeof(FunctionCompileInfoPrivate)))
                 return IntPtr.Zero;
@@ -152,7 +157,7 @@ namespace PlClr
             {
                 var ci = System.Runtime.InteropServices.Marshal.PtrToStructure<FunctionCompileInfoPrivate>(arg);
 
-                var functionName = Marshal.PtrToStringPFree(ci.FunctionNamePtr, nameof(ci.FunctionNamePtr));
+                var functionName = Marshal.PtrToStringPFree(ci.FunctionNamePtr);
                 if (functionName == null)
                 {
                     ServerLog.ELog(SeverityLevel.Error, "The Function name must not be NULL");
@@ -160,7 +165,7 @@ namespace PlClr
                     throw new Exception("Unreachable");
                 }
 
-                var functionBody = Marshal.PtrToStringPFree(ci.FunctionBodyPtr, nameof(ci.FunctionBodyPtr));
+                var functionBody = Marshal.PtrToStringPFree(ci.FunctionBodyPtr);
                 if (functionBody == null)
                 {
                     ServerLog.ELog(SeverityLevel.Error, "The Function name must not be NULL");
@@ -168,10 +173,45 @@ namespace PlClr
                     throw new Exception("Unreachable");
                 }
 
-                return new FunctionCompileInfo(ci.FunctionOid,
-                    functionName,
-                    functionBody);
+                var nArgs = ci.NumberOfArguments;
+
+                if (nArgs == 0)
+                    return new FunctionCompileInfo(ci.FunctionOid, functionName, functionBody);
+
+                if (ci.ArgumentTypes == IntPtr.Zero)
+                {
+                    ServerLog.ELog(SeverityLevel.Error, $"The Function has {nArgs} Arguments but the array of argument types is empty");
+                    // unreachable as Elog >= Error will tear down th process.
+                    throw new Exception("Unreachable");
+                }
+
+                var argTypes = new uint[nArgs];
+                new Span<uint>((void*)ci.ArgumentTypes, nArgs).CopyTo(new Span<uint>(argTypes, 0, nArgs));
+
+                string[]? argNames = null;
+                if (ci.ArgumentNames != IntPtr.Zero)
+                {
+                    var argNamePtrs = new IntPtr[nArgs];
+                    new Span<IntPtr>((void*)ci.ArgumentNames, nArgs).CopyTo(new Span<IntPtr>(argNamePtrs, 0, nArgs));
+                    argNames = new string[nArgs];
+                    for (int i = 0; i < nArgs; i++)
+                    {
+                        // Missing argument names are an empty string not null so we don't expect null here
+                        argNames[i] = Marshal.PtrToStringPFree(argNamePtrs[i])!;
+                    }
+                }
+
+                byte[]? argModes = null;
+                if (ci.ArgumentModes != IntPtr.Zero)
+                {
+                    argModes = new byte[nArgs];
+                    new Span<byte>((void*)ci.ArgumentModes, nArgs).CopyTo(new Span<byte>(argModes, 0, nArgs));
+                }
+
+                return new FunctionCompileInfo(ci.FunctionOid, functionName, functionBody, nArgs, argTypes, argNames,
+                    argModes);
             }
         }
+
     }
 }
