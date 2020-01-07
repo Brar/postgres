@@ -28,7 +28,7 @@ typedef struct HostSetupInfo
     void* (*CompilePtr)(FunctionCompileInfoPtr, int);
 } HostSetupInfo, *HostSetupInfoPtr;
 
-typedef void* (CORECLR_DELEGATE_CALLTYPE *PlClrMainDelegate)(void *arg, int32_t arg_size_in_bytes);
+typedef void* (CORECLR_DELEGATE_CALLTYPE *PlClrMainDelegate)(void *arg, int arg_size_in_bytes);
 
 /* Forward declarations */
 static void* open_dynamic_library(const clr_char* path);
@@ -72,7 +72,7 @@ plclr_runtime_host_init(void)
     load_assembly_and_get_function_pointer_fn load_assembly_and_get_function_pointer = NULL;
     const clr_char* dotnet_type = STR("PlClr.PlClrMain, PlClr.Managed");
     const clr_char* dotnet_type_method = STR("Setup");
-    const clr_char* dotnet_type_delegate = STR("PlClrSetupDelegate");
+    const clr_char* dotnet_type_delegate = STR("PlClr.PlClrMainDelegate, PlClr.Managed");
 
     rc = get_hostfxr_path(wide_buffer, &buffer_size, NULL);
     if (rc != 0)
@@ -129,9 +129,8 @@ plclr_runtime_host_init(void)
         dotnet_type_delegate,
         NULL,
         (void**)&PlClrMain_Setup);
-
-    if (rc != 0 || PlClrMain_Setup == NULL)
-        elog(ERROR, "Function load_assembly_and_get_function_pointer() failed: %x", rc);
+	if (rc != 0 || PlClrMain_Setup == NULL)
+		elog(ERROR, "Function load_assembly_and_get_function_pointer() failed: %x", rc);
 
 	setupInfo = palloc(sizeof(ClrSetupInfo));
 
@@ -143,7 +142,7 @@ plclr_runtime_host_init(void)
 
 	hostSetupInfo = PlClrMain_Setup(setupInfo, sizeof(ClrSetupInfo));
 
-    if (hostSetupInfo)
+	if (!hostSetupInfo)
         elog(ERROR, "PL/CLR main setup failed");	
 }
 
