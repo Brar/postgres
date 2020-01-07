@@ -8,6 +8,7 @@ namespace PlClr
     public delegate void PFreeDelegate(IntPtr ptr);
     public delegate void ELogDelegate(int level, IntPtr message);
     public delegate IntPtr CompileDelegate(IntPtr ptr, int size);
+    public delegate IntPtr PlClrMainDelegate(IntPtr args, int sizeBytes);
 
     public static class PlClrMain
     {
