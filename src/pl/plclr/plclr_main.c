@@ -5,16 +5,19 @@
  */
 
 #include "postgres.h"
+
+#include <access/xact.h>
 #include "catalog/pg_proc.h"
 #include "catalog/pg_type.h"
-#include "commands/trigger.h"
 #include "commands/event_trigger.h"
-#include "mb/pg_wchar.h"
+#include "commands/trigger.h"
 #include "fmgr.h"
+#include "funcapi.h"
+#include "mb/pg_wchar.h"
 #include "utils/builtins.h"
 #include "utils/syscache.h"
+
 #include "plclr_runtime_host.h"
-#include <access/xact.h>
 
 /*
  * exported functions
@@ -52,6 +55,10 @@ plclr_call_handler(PG_FUNCTION_ARGS)
     bool isnull;
     FunctionCompileInfo compileInfo;
 	void* functionHandle;
+	int			numargs;
+	Oid*		argtypes;
+	char**		argnames;
+	char*		argmodes;
 	
     PG_TRY();
     {
@@ -75,6 +82,18 @@ plclr_call_handler(PG_FUNCTION_ARGS)
             if (isnull)
                 elog(ERROR, "null prosrc");
             compileInfo.FunctionBody = server_encoding_to_clr_char(TextDatumGetCString(prosrcdatum));
+
+        	numargs = get_func_arg_info(procTup, &argtypes, &argnames, &argmodes);
+
+        	clr_char** unicode_argnames = palloc(numargs * sizeof(clr_char*));
+        	for (int i = numargs - 1; i >= 0; i--)
+        	{
+        		unicode_argnames[i] = server_encoding_to_clr_char(argnames[i]);
+        	}
+        	compileInfo.NumberOfArguments = numargs;
+        	compileInfo.ArgumentTypes = &argtypes;
+        	compileInfo.ArgumentNames = &unicode_argnames;
+        	compileInfo.ArgumentModes = &argmodes;
 
         	functionHandle = plclr_compile((FunctionCompileInfoPtr)&compileInfo);
             retval = (Datum)0;

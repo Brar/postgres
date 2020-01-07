@@ -28,6 +28,10 @@ typedef struct FunctionCompileInfo
     Oid FunctionOid;
     const clr_char* FunctionName;
     const clr_char* FunctionBody;
+	int NumberOfArguments;
+	void* ArgumentTypes;
+	void* ArgumentNames;
+	void* ArgumentModes;
 } FunctionCompileInfo, *FunctionCompileInfoPtr;
 
 void* plclr_compile(FunctionCompileInfoPtr compileInfo);
