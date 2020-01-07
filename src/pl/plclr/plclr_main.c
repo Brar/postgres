@@ -51,6 +51,7 @@ plclr_call_handler(PG_FUNCTION_ARGS)
     Datum prosrcdatum;
     bool isnull;
     FunctionCompileInfo compileInfo;
+	void* functionHandle;
 	
     PG_TRY();
     {
@@ -75,7 +76,8 @@ plclr_call_handler(PG_FUNCTION_ARGS)
                 elog(ERROR, "null prosrc");
             compileInfo.FunctionBody = server_encoding_to_clr_char(TextDatumGetCString(prosrcdatum));
 
-            retval = (Datum)compile_and_execute((FunctionCompileInfoPtr)&compileInfo);
+        	functionHandle = plclr_compile((FunctionCompileInfoPtr)&compileInfo);
+            retval = (Datum)0;
 
 			ReleaseSysCache(procTup);
          }
