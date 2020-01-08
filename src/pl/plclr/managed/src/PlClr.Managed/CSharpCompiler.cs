@@ -2,9 +2,12 @@
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.Emit;
 using System;
+using System.Collections.Generic;
+using System.Globalization;
 using System.IO;
 using System.Linq;
 using System.Reflection;
+using System.Text;
 
 namespace PlClr
 {
@@ -12,14 +15,29 @@ namespace PlClr
     {
         public static MethodInfo? Compile(FunctionCompileInfo func)
         {
-            var tree = CSharpSyntaxTree.ParseText(@$"
-public static class _{func.FunctionOid}_
-{{
-    public static void {func.FunctionName}()
-    {{
-        {func.FunctionBody}
-    }}   
-}}");
+            var className = $"PlClrClass_{func.FunctionOid}";
+            var safeMethodName = GetSafeFunctionName(func.FunctionName);
+            var builder = new StringBuilder()
+                .AppendLine("using System;")
+                .AppendLine()
+                .AppendLine($"public static class {className}")
+                .AppendLine("{")
+                .Append("\tpublic static void ")
+                .Append(safeMethodName)
+                .Append("(")
+                .Append(
+                    string.Join(", ",
+                        func.ArgumentOids.Select((oid, index) =>
+                            $"{ServerTypes.GetTypeForOid(oid).FullName} {func.ArgumentNames?[index] ?? $"arg{index}"}")))
+                .AppendLine(")")
+                .AppendLine("\t{")
+                .Append("\t\t")
+                .AppendLine(func.FunctionBody)
+                .AppendLine("\t}")
+                .AppendLine("}");
+
+            var generatedCode = builder.ToString();
+            var tree = CSharpSyntaxTree.ParseText(generatedCode);
 
             var options = new CSharpCompilationOptions(OutputKind.DynamicallyLinkedLibrary);
             var mscorlib = MetadataReference.CreateFromFile(typeof(object).Assembly.Location);
@@ -49,7 +67,7 @@ public static class _{func.FunctionOid}_
                     .OrderBy(d=> d.Location.IsInSource ? d.Location.SourceSpan.Start : int.MaxValue))
                     ServerLog.ELog(GetSeverityLevel(resultDiagnostic.Severity), resultDiagnostic.ToString());
 
-                return Assembly.Load(ms.ToArray()).GetType($"_{func.FunctionOid}_")!.GetMethod(func.FunctionName);
+                return Assembly.Load(ms.ToArray()).GetType(className)!.GetMethod(safeMethodName);
 
             }
             else
@@ -76,5 +94,8 @@ public static class _{func.FunctionOid}_
                 return null;
             }
         }
+
+        private static string GetSafeFunctionName(string functionName)
+            => new string(functionName.Take(1).Select(c => char.IsLetter(c) ? c : '_').Concat(functionName.Skip(1).Select(c=> char.IsLetterOrDigit(c) ? c : '_')).ToArray());
     }
 }

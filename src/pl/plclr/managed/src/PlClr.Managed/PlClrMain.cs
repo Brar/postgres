@@ -168,7 +168,7 @@ namespace PlClr
                 var functionBody = Marshal.PtrToStringPFree(ci.FunctionBodyPtr);
                 if (functionBody == null)
                 {
-                    ServerLog.ELog(SeverityLevel.Error, "The Function name must not be NULL");
+                    ServerLog.ELog(SeverityLevel.Error, "The Function body must not be NULL");
                     // unreachable as Elog >= Error will tear down th process.
                     throw new Exception("Unreachable");
                 }
@@ -199,6 +199,7 @@ namespace PlClr
                         // Missing argument names are an empty string not null so we don't expect null here
                         argNames[i] = Marshal.PtrToStringPFree(argNamePtrs[i])!;
                     }
+                    ServerMemory.PFree(ci.ArgumentNames);
                 }
 
                 byte[]? argModes = null;
