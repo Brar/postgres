@@ -59,7 +59,7 @@ plclr_call_handler(PG_FUNCTION_ARGS)
 	Oid*		argtypes;
 	char**		argnames;
 	char*		argmodes;
-	
+	Sleep(30000);
     PG_TRY();
     {
         if (CALLED_AS_TRIGGER(fcinfo))
@@ -85,15 +85,35 @@ plclr_call_handler(PG_FUNCTION_ARGS)
 
         	numargs = get_func_arg_info(procTup, &argtypes, &argnames, &argmodes);
 
-        	clr_char** unicode_argnames = palloc(numargs * sizeof(clr_char*));
-        	for (int i = numargs - 1; i >= 0; i--)
+        	if(numargs > 0)
         	{
-        		unicode_argnames[i] = server_encoding_to_clr_char(argnames[i]);
+	            compileInfo.NumberOfArguments = numargs;
+        		compileInfo.ArgumentTypes = argtypes;
+
+	            if (argnames == NULL)
+		            compileInfo.ArgumentNames = NULL;
+	            else
+	            {
+		            clr_char** unicode_argnames = palloc(numargs * sizeof(clr_char*));
+		            for (int i = numargs - 1; i >= 0; i--)
+		            {
+			            unicode_argnames[i] = server_encoding_to_clr_char(argnames[i]);
+		            }
+		            compileInfo.ArgumentNames = unicode_argnames;
+	            }
+
+	            if (argmodes == NULL)
+        			compileInfo.ArgumentModes = NULL;
+				else
+        			compileInfo.ArgumentModes = argmodes;
         	}
-        	compileInfo.NumberOfArguments = numargs;
-        	compileInfo.ArgumentTypes = &argtypes;
-        	compileInfo.ArgumentNames = &unicode_argnames;
-        	compileInfo.ArgumentModes = &argmodes;
+			else
+			{
+	            compileInfo.NumberOfArguments = 0;
+        		compileInfo.ArgumentTypes = NULL;
+		        compileInfo.ArgumentNames = NULL;
+        		compileInfo.ArgumentModes = NULL;
+			}
 
         	functionHandle = plclr_compile((FunctionCompileInfoPtr)&compileInfo);
             retval = (Datum)0;
