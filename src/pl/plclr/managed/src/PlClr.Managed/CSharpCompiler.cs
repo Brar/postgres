@@ -17,18 +17,22 @@ namespace PlClr
         {
             var className = $"PlClrClass_{func.FunctionOid}";
             var safeMethodName = GetSafeFunctionName(func.FunctionName);
+            var returnType = ServerTypes.GetTypeForOid(func.ReturnValueType);
+            var returnTypeName = returnType == typeof(void) ? "void" : returnType.FullName;
             var builder = new StringBuilder()
                 .AppendLine("using System;")
                 .AppendLine()
                 .AppendLine($"public static class {className}")
                 .AppendLine("{")
-                .Append("\tpublic static void ")
+                .Append("\tpublic static ")
+                .Append(returnTypeName)
+                .Append(" ")
                 .Append(safeMethodName)
                 .Append("(")
                 .Append(
                     string.Join(", ",
                         func.ArgumentOids.Select((oid, index) =>
-                            $"{ServerTypes.GetTypeForOid(oid).FullName} {func.ArgumentNames?[index] ?? $"arg{index}"}")))
+                            $"{ServerTypes.GetTypeForOid(oid).FullName} {func.ArgumentNames?[index] ?? $"arg{index + 1}"}")))
                 .AppendLine(")")
                 .AppendLine("\t{")
                 .Append("\t\t")

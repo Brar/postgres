@@ -119,7 +119,7 @@ namespace PlClr
                 // 2275 => typeof(cstring), // cstring
                 // 2276 => typeof(any), // any
                 // 2277 => typeof(anyarray), // anyarray
-                // 2278 => typeof(void), // void
+                2278 => typeof(void), // void
                 // 2279 => typeof(trigger), // trigger
                 // 2280 => typeof(language_handler), // language_handler
                 // 2281 => typeof(internal), // internal

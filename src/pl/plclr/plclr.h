@@ -28,6 +28,8 @@ typedef struct FunctionCompileInfo
     Oid FunctionOid;
     const clr_char* FunctionName;
     const clr_char* FunctionBody;
+	Oid ReturnValueType;
+	bool ReturnsSet;
 	int NumberOfArguments;
 	void* ArgumentTypes;
 	void* ArgumentNames;

@@ -25,6 +25,8 @@
 
 extern void _PG_init(void);
 
+Datum plclr_call_handler(PG_FUNCTION_ARGS);
+
 static clr_char* server_encoding_to_clr_char(const char *input);
 
 
@@ -76,6 +78,8 @@ plclr_call_handler(PG_FUNCTION_ARGS)
             if (!HeapTupleIsValid(procTup))
                 elog(ERROR, "cache lookup failed for function %u", compileInfo.FunctionOid);
             procStruct = (Form_pg_proc) GETSTRUCT(procTup);
+        	compileInfo.ReturnValueType = procStruct->prorettype;
+        	compileInfo.ReturnsSet = procStruct->proretset;
             compileInfo.FunctionName = server_encoding_to_clr_char(NameStr(procStruct->proname));
 
             prosrcdatum = SysCacheGetAttr(PROCOID, procTup, Anum_pg_proc_prosrc, &isnull);
