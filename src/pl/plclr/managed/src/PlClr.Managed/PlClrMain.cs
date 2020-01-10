@@ -22,6 +22,8 @@ namespace PlClr
             public uint FunctionOid;
             public IntPtr FunctionNamePtr;
             public IntPtr FunctionBodyPtr;
+            public uint ReturnValueType;
+            public bool ReturnsSet;
             public int NumberOfArguments;
             public IntPtr ArgumentTypes;
             public IntPtr ArgumentNames;
@@ -176,7 +178,7 @@ namespace PlClr
                 var nArgs = ci.NumberOfArguments;
 
                 if (nArgs == 0)
-                    return new FunctionCompileInfo(ci.FunctionOid, functionName, functionBody);
+                    return new FunctionCompileInfo(ci.FunctionOid, functionName, functionBody, ci.ReturnValueType, ci.ReturnsSet);
 
                 if (ci.ArgumentTypes == IntPtr.Zero)
                 {
@@ -209,7 +211,7 @@ namespace PlClr
                     new Span<byte>((void*)ci.ArgumentModes, nArgs).CopyTo(new Span<byte>(argModes, 0, nArgs));
                 }
 
-                return new FunctionCompileInfo(ci.FunctionOid, functionName, functionBody, nArgs, argTypes, argNames,
+                return new FunctionCompileInfo(ci.FunctionOid, functionName, functionBody, ci.ReturnValueType, ci.ReturnsSet, nArgs, argTypes, argNames,
                     argModes);
             }
         }
