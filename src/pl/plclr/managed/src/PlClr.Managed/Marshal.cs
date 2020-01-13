@@ -43,7 +43,7 @@ namespace PlClr
             {
                 fixed (char* unsafeString = str)
                 {
-                    Buffer.MemoryCopy((void*)unsafeString, (void*)returnValue, (ulong)resultLength, (ulong)resultLength - 2UL);
+                    Buffer.MemoryCopy((void*)unsafeString, (void*)returnValue, (ulong)resultLength, (ulong)resultLength);
                 }
             }
             else

@@ -7,29 +7,16 @@ namespace PlClr
     public delegate IntPtr RePAllocDelegate(IntPtr ptr, ulong size);
     public delegate void PFreeDelegate(IntPtr ptr);
     public delegate void ELogDelegate(int level, IntPtr message);
-    public delegate IntPtr CompileDelegate(IntPtr ptr, int size);
+    // ReSharper disable once UnusedMember.Global
     public delegate IntPtr PlClrMainDelegate(IntPtr args, int sizeBytes);
+    public delegate IntPtr FunctionCallDelegate(ReadOnlySpan<NullableDatum> values);
+
 
     public static class PlClrMain
     {
         #region Private structs for marshalling
 
         // ReSharper disable FieldCanBeMadeReadOnly.Local
-
-        [StructLayout(LayoutKind.Sequential)]
-        private struct FunctionCompileInfoPrivate
-        {
-            public uint FunctionOid;
-            public IntPtr FunctionNamePtr;
-            public IntPtr FunctionBodyPtr;
-            public uint ReturnValueType;
-            public bool ReturnsSet;
-            public int NumberOfArguments;
-            public IntPtr ArgumentTypes;
-            public IntPtr ArgumentNames;
-            public IntPtr ArgumentModes;
-
-        }
 
         [StructLayout(LayoutKind.Sequential)]
         private struct ClrSetupInfo
@@ -45,13 +32,37 @@ namespace PlClr
         private struct HostSetupInfo
         {
             public IntPtr CompileFunctionPtr;
+            public IntPtr ExecuteFunctionPtr;
+        }
+
+        [StructLayout(LayoutKind.Sequential)]
+        private struct FunctionCompileInfoPrivate
+        {
+            public uint FunctionOid;
+            public IntPtr FunctionNamePtr;
+            public IntPtr FunctionBodyPtr;
+            public uint ReturnValueType;
+            public bool ReturnsSet;
+            public int NumberOfArguments;
+            public IntPtr ArgumentTypes;
+            public IntPtr ArgumentNames;
+            public IntPtr ArgumentModes;
         }
 
         [StructLayout(LayoutKind.Sequential)]
         private struct FunctionCompileResult
         {
-            
+            public IntPtr ExecuteDelegatePtr;
         }
+
+        [StructLayout(LayoutKind.Sequential)]
+        private struct FunctionCallInfoPrivate
+        {
+            public IntPtr ExecuteDelegatePtr;
+            public int NumberOfArguments;
+            public IntPtr ArgumentValues;
+        }
+
 
         [StructLayout(LayoutKind.Sequential)]
         private struct FunctionExecuteResult
@@ -63,7 +74,8 @@ namespace PlClr
 
         #endregion
 
-        private static readonly CompileDelegate CompileDelegate = Compile;
+        private static readonly PlClrMainDelegate CompileDelegate = Compile;
+        private static readonly PlClrMainDelegate ExecuteDelegate = Execute;
 
         /// <summary>
         /// This is the initial setup Method.
@@ -131,6 +143,8 @@ namespace PlClr
                 HostSetupInfo hostSetupInfo;
                 hostSetupInfo.CompileFunctionPtr =
                     System.Runtime.InteropServices.Marshal.GetFunctionPointerForDelegate(CompileDelegate);
+                hostSetupInfo.ExecuteFunctionPtr =
+                    System.Runtime.InteropServices.Marshal.GetFunctionPointerForDelegate(ExecuteDelegate);
 
                 var size = System.Runtime.InteropServices.Marshal.SizeOf<HostSetupInfo>();
                 var ptr = ServerMemory.Palloc((ulong)size);
@@ -144,18 +158,27 @@ namespace PlClr
             }
         }
 
-        public static unsafe IntPtr Compile(IntPtr arg, int argLength)
+        public static IntPtr Compile(IntPtr arg, int argLength)
         {
             if (argLength < System.Runtime.InteropServices.Marshal.SizeOf(typeof(FunctionCompileInfoPrivate)))
                 return IntPtr.Zero;
 
             var compileInfo = GetFunctionCompileInfo(arg);
 
-            var methodInfo = CSharpCompiler.Compile(compileInfo);
+            var executeDelegate = CSharpCompiler.Compile(compileInfo);
+            if (executeDelegate == null)
+            {
+                return IntPtr.Zero;
+            }
 
-            return IntPtr.Zero;
+            FunctionCompileResult result;
+            result.ExecuteDelegatePtr =
+                System.Runtime.InteropServices.Marshal.GetFunctionPointerForDelegate(executeDelegate);
+            var ret = ServerMemory.Palloc((ulong)System.Runtime.InteropServices.Marshal.SizeOf<FunctionCompileResult>());
+            System.Runtime.InteropServices.Marshal.StructureToPtr(result, ret, false);
+            return ret;
 
-            static FunctionCompileInfo GetFunctionCompileInfo(IntPtr arg)
+            static unsafe FunctionCompileInfo GetFunctionCompileInfo(IntPtr arg)
             {
                 var ci = System.Runtime.InteropServices.Marshal.PtrToStructure<FunctionCompileInfoPrivate>(arg);
 
@@ -189,6 +212,7 @@ namespace PlClr
 
                 var argTypes = new uint[nArgs];
                 new Span<uint>((void*)ci.ArgumentTypes, nArgs).CopyTo(new Span<uint>(argTypes, 0, nArgs));
+                ServerMemory.PFree(ci.ArgumentTypes);
 
                 string[]? argNames = null;
                 if (ci.ArgumentNames != IntPtr.Zero)
@@ -209,6 +233,7 @@ namespace PlClr
                 {
                     argModes = new byte[nArgs];
                     new Span<byte>((void*)ci.ArgumentModes, nArgs).CopyTo(new Span<byte>(argModes, 0, nArgs));
+                    ServerMemory.PFree(ci.ArgumentModes);
                 }
 
                 return new FunctionCompileInfo(ci.FunctionOid, functionName, functionBody, ci.ReturnValueType, ci.ReturnsSet, nArgs, argTypes, argNames,
@@ -216,5 +241,15 @@ namespace PlClr
             }
         }
 
+        public static unsafe IntPtr Execute(IntPtr arg, int argLength)
+        {
+            var ci = System.Runtime.InteropServices.Marshal.PtrToStructure<FunctionCallInfoPrivate>(arg);
+            var nArgs = ci.NumberOfArguments;
+            var callDelegate =
+                System.Runtime.InteropServices.Marshal.GetDelegateForFunctionPointer<FunctionCallDelegate>(
+                    ci.ExecuteDelegatePtr);
+
+            return callDelegate(new ReadOnlySpan<NullableDatum>((void*) ci.ArgumentValues, nArgs));
+        }
     }
 }

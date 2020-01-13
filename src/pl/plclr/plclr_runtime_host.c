@@ -1,10 +1,13 @@
 #include "postgres.h"
+
 #include "miscadmin.h"
 #include "port.h"
+
+#include "plclr_managed.h"
 #include "plclr_runtime_host.h"
 #include "plclr_string.h"
-#include "nethost.h"
 
+#include "nethost.h"
 /* https://github.com/dotnet/runtime/blob/master/src/installer/corehost/cli/coreclr_delegates.h */
 #include "coreclr_delegates.h"
 /* https://github.com/dotnet/runtime/blob/master/src/installer/corehost/cli/hostfxr.h */
@@ -25,7 +28,8 @@ typedef struct ClrSetupInfo
 
 typedef struct HostSetupInfo
 {
-    void* (*CompilePtr)(FunctionCompileInfoPtr, int);
+    void* (*CompilePtr)(PlClr_FunctionCompileInfoPtr, int);
+    void* (*ExecutePtr)(PlClr_FunctionCallInfoPtr, int);
 } HostSetupInfo, *HostSetupInfoPtr;
 
 typedef void* (CORECLR_DELEGATE_CALLTYPE *PlClrMainDelegate)(void *arg, int arg_size_in_bytes);
@@ -41,9 +45,9 @@ static hostfxr_close_fn hostfxr_close;
 static hostfxr_handle cxt;
 static HostSetupInfoPtr hostSetupInfo;
 
-void* plclr_compile(FunctionCompileInfoPtr compileInfo)
+void* plclr_compile_managed(PlClr_FunctionCompileInfoPtr compileInfo)
 {
-	return hostSetupInfo->CompilePtr(compileInfo, sizeof(FunctionCompileInfo));
+	return hostSetupInfo->CompilePtr(compileInfo, sizeof(PlClr_FunctionCompileInfo));
 }
 
 void

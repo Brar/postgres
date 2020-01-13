@@ -24,11 +24,14 @@ NAME = plclr
 
 OBJS = \
 	$(WIN32RES) \
-	plclr_main.o \
+	plclr_comp.o \
+	plclr_exec.o \
+	plclr_func_cache.o \
+	plclr_handler.o \
 	plclr_runtime_host.o \
 	plclr_string.o
 
-# I have no ides why we can't use the pg_enc2name_tbl which is exported from postgres.lib
+# I have no idea why we can't use the pg_enc2name_tbl which is exported from postgres.lib
 # as a workaround we build our own here
 OBJS += \
 	encnames.o
