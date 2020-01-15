@@ -76,7 +76,6 @@ static void plclr_free_function_memory(PlClr_function *func);
 PlClr_function *
 plclr_get_func_from_cache(FunctionCallInfo fcinfo, HeapTuple procTup, bool forValidator, bool* isValid)
 {
-	Oid			funcOid = fcinfo->flinfo->fn_oid;
 	Form_pg_proc procStruct;
 	PlClr_function *function;
 	PlClr_func_hashkey hashkey;
