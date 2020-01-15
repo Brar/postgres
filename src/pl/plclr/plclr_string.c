@@ -3,6 +3,7 @@
 #include <access/xact.h>
 #include "mb/pg_wchar.h"
 #include "plclr.h"
+#include "plclr_string.h"
 
 #if defined(WIN32)
 
