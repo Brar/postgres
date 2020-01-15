@@ -68,6 +68,9 @@ namespace PlClr
                 .AppendLine("}");
 
             var generatedCode = builder.ToString();
+#if DEBUG
+            ServerLog.ELog(SeverityLevel.Debug1, $"PL/CLR generated code:\n{generatedCode}\n");
+#endif
             var tree = CSharpSyntaxTree.ParseText(generatedCode);
 
             var options = new CSharpCompilationOptions(OutputKind.DynamicallyLinkedLibrary);
@@ -104,8 +107,6 @@ namespace PlClr
                     .OrderBy(d => d.Location.IsInSource ? d.Location.SourceSpan.Start : int.MaxValue))
                     ServerLog.ELog(GetSeverityLevel(resultDiagnostic.Severity), resultDiagnostic.ToString());
 
-                Assembly[] asms = AppDomain.CurrentDomain.GetAssemblies();
-                ServerLog.ELog(SeverityLevel.LogServerOnly, string.Join(Environment.NewLine, asms.Select(a => a.FullName)));
                 var assembly = AssemblyLoadContext.GetLoadContext(typeof(CSharpCompiler).Assembly)!.LoadFromStream(ms);
                 return (FunctionCallDelegate)assembly.GetType(className)!.GetMethod($"Execute_{safeMethodName}")!.CreateDelegate(typeof(FunctionCallDelegate));
             }

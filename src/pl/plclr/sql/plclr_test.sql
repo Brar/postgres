@@ -6,7 +6,7 @@ CREATE FUNCTION plclr_regress_simple() RETURNS void AS '/* 😇 */' LANGUAGE plc
 
 select plclr_regress_simple();
 
--- simple add function
-CREATE FUNCTION plclr_add(int, int) RETURNS int AS 'return arg1 + arg2;' LANGUAGE plclr;
+-- simple function adding two integer values
+CREATE FUNCTION plclr_regress_add_integer(integer, integer) RETURNS int AS 'return arg1 + arg2;' LANGUAGE plclr;
 
-select plclr_add(21, 21);
+select plclr_regress_add_integer(21, 21);
