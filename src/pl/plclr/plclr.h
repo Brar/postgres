@@ -101,6 +101,9 @@ typedef struct PlClr_function
 	int			old_varno;
 
 	unsigned long use_count;
+
+	/* the managed delegate to execute this function */
+	void*		action;
 } PlClr_function;
 
 #endif // PLCLR_H

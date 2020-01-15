@@ -12,6 +12,12 @@
 #include "plclr_managed.h"
 #include "plclr_string.h"
 
+typedef struct PlClrFunctionCompileResult
+{
+    void* ExecuteDelegatePtr;
+} PlClrFunctionCompileResult, *PlClrFunctionCompileResultPtr;
+
+
 /* A context appropriate for short-term allocs during compilation */
 MemoryContext plclr_compile_tmp_cxt;
 
@@ -23,7 +29,7 @@ plclr_compile_function(FunctionCallInfo fcinfo, HeapTuple procTup, PlClr_functio
 	bool		is_event_trigger = CALLED_AS_EVENT_TRIGGER(fcinfo);
 	Datum		prosrcdatum;
 	bool		isnull;
-	PlClr_FunctionCompileInfo compileInfo;
+	PlClrFunctionCompileInfo compileInfo;
 	//HeapTuple	typeTup;
 	//Form_pg_type typeStruct;
 	//PLpgSQL_variable *var;
@@ -41,6 +47,7 @@ plclr_compile_function(FunctionCallInfo fcinfo, HeapTuple procTup, PlClr_functio
 	//int		   *in_arg_varnos = NULL;
 	//PLpgSQL_variable **out_arg_variables;
 	MemoryContext func_cxt;
+	PlClrFunctionCompileResultPtr compileResult;
 
 	/*
 	 * Create the new function struct, if not done already.  The function
@@ -155,7 +162,8 @@ plclr_compile_function(FunctionCallInfo fcinfo, HeapTuple procTup, PlClr_functio
 		        compileInfo.ArgumentModes = NULL;
 			}
 
-		    plclr_compile_managed((PlClr_FunctionCompileInfoPtr)&compileInfo);
+			compileResult = (PlClrFunctionCompileResultPtr)plclrManagedInterface->CompilePtr(&compileInfo, sizeof(PlClrFunctionCompileInfo));
+			function->action = compileResult->ExecuteDelegatePtr;
 
 			MemoryContextSwitchTo(func_cxt);
 			break;

@@ -3,11 +3,17 @@
 
 #include "plclr.h"
 #include "plclr_exec.h"
+#include "plclr_managed.h"
 
 Datum
 plclr_exec_function(PlClr_function *func, FunctionCallInfo fcinfo, bool atomic)
 {
-	return (Datum) 0;
+	PlClrFunctionCallInfo callInfo;
+	callInfo.NumberOfArguments = fcinfo->nargs;
+	callInfo.ArgumentValues = fcinfo->args;
+	callInfo.ExecuteDelegatePtr = func->action;
+	
+	return (Datum)plclrManagedInterface->ExecutePtr(&callInfo, sizeof(PlClrFunctionCallInfo));
 }
 
 
