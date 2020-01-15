@@ -2,10 +2,18 @@
 CREATE EXTENSION IF NOT EXISTS plclr;
 NOTICE:  extension "plclr" already exists, skipping
 -- simple function to get the module loaded
-CREATE FUNCTION plclr_regress_simple() RETURNS int AS '/* 😇 */return 1;' LANGUAGE plclr;
+CREATE FUNCTION plclr_regress_simple() RETURNS void AS '/* 😇 */' LANGUAGE plclr;
 select plclr_regress_simple();
  plclr_regress_simple 
 ----------------------
-                    1
+ 
+(1 row)
+
+-- simple function adding two integer values
+CREATE FUNCTION plclr_regress_add_integer(integer, integer) RETURNS int AS 'return arg1 + arg2;' LANGUAGE plclr;
+select plclr_regress_add_integer(21, 21);
+ plclr_regress_add_integer 
+---------------------------
+                        42
 (1 row)
 
