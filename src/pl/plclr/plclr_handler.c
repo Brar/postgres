@@ -34,15 +34,15 @@ PG_FUNCTION_INFO_V1(plclr_call_handler);
 void
 _PG_init(void)
 {
-    static bool inited = false;
+	static bool inited = false;
 
-    if (inited)
-        return;
+	if (inited)
+		return;
 	
 	plclr_HashTableInit();
-    plclr_runtime_host_init();
+	plclr_runtime_host_init();
 
-    inited = true;
+	inited = true;
 }
 
 Datum
@@ -55,7 +55,7 @@ plclr_call_handler(PG_FUNCTION_ARGS)
 	Datum		retval;
 	int			rc;
 
-	Sleep(30000);
+	//Sleep(30000);
 	nonatomic = fcinfo->context &&
 		IsA(fcinfo->context, CallContext) &&
 		!castNode(CallContext, fcinfo->context)->atomic;

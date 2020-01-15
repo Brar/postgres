@@ -158,8 +158,19 @@ plclr_compile_function(FunctionCallInfo fcinfo, HeapTuple procTup, PlClr_functio
 		    plclr_compile_managed((PlClr_FunctionCompileInfoPtr)&compileInfo);
 
 			MemoryContextSwitchTo(func_cxt);
+			break;
+
+		case PLCLR_DML_TRIGGER:
+			break;
+
+		case PLCLR_EVENT_TRIGGER:
+			break;
+
+		default:
+			elog(ERROR, "unrecognized function typecode: %d",
+				 (int) function->fn_is_trigger);
+			break;
 	}
 
-	
 	return function;
 }
