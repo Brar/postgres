@@ -2,7 +2,7 @@
 #define PLCLR_MANAGED_H
 #include "plclr.h"
 
-typedef struct PlClr_FunctionCompileInfo
+typedef struct PlClrFunctionCompileInfo
 {
     Oid FunctionOid;
     const clr_char* FunctionName;
@@ -13,15 +13,21 @@ typedef struct PlClr_FunctionCompileInfo
 	void* ArgumentTypes;
 	void* ArgumentNames;
 	void* ArgumentModes;
-} PlClr_FunctionCompileInfo, *PlClr_FunctionCompileInfoPtr;
+} PlClrFunctionCompileInfo, *PlClrFunctionCompileInfoPtr;
 
-typedef struct PlClr_FunctionCallInfo
+typedef struct PlClrFunctionCallInfo
 {
 	void* ExecuteDelegatePtr;
 	int NumberOfArguments;
 	void* ArgumentValues;
-} PlClr_FunctionCallInfo, *PlClr_FunctionCallInfoPtr;
+} PlClrFunctionCallInfo, *PlClrFunctionCallInfoPtr;
 
-void* plclr_compile_managed(PlClr_FunctionCompileInfoPtr compileInfo);
+typedef struct PlClrManagedInterface
+{
+    void* (*CompilePtr)(PlClrFunctionCompileInfoPtr, int);
+    void* (*ExecutePtr)(PlClrFunctionCallInfoPtr, int);
+} PlClrManagedInterface, *PlClrManagedInterfacePtr;
+
+extern PlClrManagedInterfacePtr plclrManagedInterface;
 
 #endif // PLCLR_MANAGED_H

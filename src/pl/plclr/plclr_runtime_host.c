@@ -16,21 +16,14 @@
 #include <dlfcn.h>
 #include <string.h>
 
-/* private types for marshalling delegates between native and managed code */
-typedef struct ClrSetupInfo
+typedef struct PlClrUnmanagedInterface
 {
     void* (*PallocFunctionPtr)(Size);
     void* (*Palloc0FunctionPtr)(Size);
     void* (*RePallocFunctionPtr)(void*, Size);
     void (*PFreeFunctionPtr)(void*);
     void (*ELogFunctionPtr)(int, const char*);
-} ClrSetupInfo, *ClrSetupInfoPtr;
-
-typedef struct HostSetupInfo
-{
-    void* (*CompilePtr)(PlClr_FunctionCompileInfoPtr, int);
-    void* (*ExecutePtr)(PlClr_FunctionCallInfoPtr, int);
-} HostSetupInfo, *HostSetupInfoPtr;
+} PlClrUnmanagedInterface, *PlClrUnmanagedInterfacePtr;
 
 typedef void* (CORECLR_DELEGATE_CALLTYPE *PlClrMainDelegate)(void *arg, int arg_size_in_bytes);
 
@@ -43,12 +36,7 @@ static void plclr_elog(int, const char*);
 /* Globals to hold managed exports */
 static hostfxr_close_fn hostfxr_close;
 static hostfxr_handle cxt;
-static HostSetupInfoPtr hostSetupInfo;
-
-void* plclr_compile_managed(PlClr_FunctionCompileInfoPtr compileInfo)
-{
-	return hostSetupInfo->CompilePtr(compileInfo, sizeof(PlClr_FunctionCompileInfo));
-}
+PlClrManagedInterfacePtr plclrManagedInterface;
 
 void
 plclr_runtime_host_init(void)
@@ -56,7 +44,7 @@ plclr_runtime_host_init(void)
 	hostfxr_initialize_for_runtime_config_fn hostfxr_initialize;
 	hostfxr_get_runtime_delegate_fn hostfxr_get_runtime_delegate;
 	PlClrMainDelegate PlClrMain_Setup;
-    ClrSetupInfoPtr setupInfo;
+    PlClrUnmanagedInterfacePtr setupInfo;
     char buffer[MAXPGPATH];
     size_t buffer_size = MAXPGPATH;
 
@@ -136,7 +124,7 @@ plclr_runtime_host_init(void)
 	if (rc != 0 || PlClrMain_Setup == NULL)
 		elog(ERROR, "Function load_assembly_and_get_function_pointer() failed: %x", rc);
 
-	setupInfo = palloc(sizeof(ClrSetupInfo));
+	setupInfo = palloc(sizeof(PlClrUnmanagedInterface));
 
 	setupInfo->ELogFunctionPtr = plclr_elog;
 	setupInfo->PFreeFunctionPtr = pfree;
@@ -144,9 +132,9 @@ plclr_runtime_host_init(void)
 	setupInfo->PallocFunctionPtr = palloc;
 	setupInfo->RePallocFunctionPtr = repalloc;
 
-	hostSetupInfo = PlClrMain_Setup(setupInfo, sizeof(ClrSetupInfo));
+	plclrManagedInterface = PlClrMain_Setup(setupInfo, sizeof(PlClrUnmanagedInterface));
 
-	if (!hostSetupInfo)
+	if (!plclrManagedInterface)
         elog(ERROR, "PL/CLR main setup failed");	
 }
 

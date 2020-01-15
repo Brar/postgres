@@ -2,19 +2,18 @@
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.Emit;
 using System;
-using System.Collections.Generic;
 using System.Diagnostics;
-using System.Globalization;
 using System.IO;
 using System.Linq;
 using System.Reflection;
+using System.Runtime.Loader;
 using System.Text;
 
 namespace PlClr
 {
     internal static class CSharpCompiler
     {
-        public static Delegate? Compile(FunctionCompileInfo func)
+        public static FunctionCallDelegate? Compile(FunctionCompileInfo func)
         {
             var className = $"PlClrClass_{func.FunctionOid}";
             var safeMethodName = GetSafeFunctionName(func.FunctionName);
@@ -29,7 +28,7 @@ namespace PlClr
                 .AppendLine("{")
                 .Append("\tpublic static IntPtr Execute_")
                 .Append(safeMethodName)
-                .Append("(ReadOnlySpan<NullableDatum> values)")
+                .Append("(NullableDatum[] values)")
                 .AppendLine("\t{")
                 .Append("\t\t")
                 .AppendLine(
@@ -84,6 +83,7 @@ namespace PlClr
 
             var ms = new MemoryStream();
             var res = compilation.Emit(ms);
+            ms.Seek(0L, SeekOrigin.Begin);
 
             // Hack: We just throw out the raw diagnostics for now
             // ToDo: Think about it and consult users/peers what they'd expect/prefer
@@ -104,7 +104,10 @@ namespace PlClr
                     .OrderBy(d => d.Location.IsInSource ? d.Location.SourceSpan.Start : int.MaxValue))
                     ServerLog.ELog(GetSeverityLevel(resultDiagnostic.Severity), resultDiagnostic.ToString());
 
-                return Assembly.Load(ms.ToArray()).GetType(className)!.GetMethod($"Execute_{safeMethodName}")!.CreateDelegate(typeof(FunctionCallDelegate));
+                Assembly[] asms = AppDomain.CurrentDomain.GetAssemblies();
+                ServerLog.ELog(SeverityLevel.LogServerOnly, string.Join(Environment.NewLine, asms.Select(a => a.FullName)));
+                var assembly = AssemblyLoadContext.GetLoadContext(typeof(CSharpCompiler).Assembly)!.LoadFromStream(ms);
+                return (FunctionCallDelegate)assembly.GetType(className)!.GetMethod($"Execute_{safeMethodName}")!.CreateDelegate(typeof(FunctionCallDelegate));
             }
             else
             {
