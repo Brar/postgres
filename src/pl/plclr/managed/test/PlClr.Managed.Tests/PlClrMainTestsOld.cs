@@ -4,7 +4,7 @@ using Xunit;
 
 namespace PlClr.Managed.Tests
 {
-    public class PlClrMainTests : TestBase
+    public class PlClrMainTestsOld : TestBase
     {
         [Fact]
         public void SetupSuccess()
