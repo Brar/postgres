@@ -4,7 +4,7 @@ using System.Text;
 
 namespace PlClr.Managed.Tests
 {
-    public enum HardcodedOid : uint
+    public enum TypeOid : uint
     {
         Invalid = 0,
         Boolean = 16,

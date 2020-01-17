@@ -4,8 +4,6 @@ namespace PlClr
 {
     public static class ServerMemory
     {
-        private static bool _isInitialized;
-        private static readonly object LockObject = new object();
         private static PAllocDelegate? _pallocDelegate;
         private static PAllocDelegate? _palloc0Delegate;
         private static RePAllocDelegate? _repallocDelegate;
@@ -18,19 +16,10 @@ namespace PlClr
             PFreeDelegate pfreeDelegate
         )
         {
-            if (_isInitialized)
-                return;
-            lock (LockObject)
-            {
-                if (_isInitialized)
-                    return;
-
-                _pallocDelegate = pallocDelegate;
-                _palloc0Delegate = palloc0Delegate;
-                _repallocDelegate = repallocDelegate;
-                _pfreeDelegate = pfreeDelegate;
-                _isInitialized = true;
-            }
+            _pallocDelegate = pallocDelegate;
+            _palloc0Delegate = palloc0Delegate;
+            _repallocDelegate = repallocDelegate;
+            _pfreeDelegate = pfreeDelegate;
         }
 
         public static IntPtr Palloc(ulong size)
