@@ -22,9 +22,9 @@ namespace PlClr
         [StructLayout(LayoutKind.Sequential)]
         private struct PlClrUnmanagedInterface
         {
-            public IntPtr PallocFunctionPtr;
-            public IntPtr Palloc0FunctionPtr;
-            public IntPtr RePallocFunctionPtr;
+            public IntPtr PAllocFunctionPtr;
+            public IntPtr PAlloc0FunctionPtr;
+            public IntPtr RePAllocFunctionPtr;
             public IntPtr PFreeFunctionPtr;
             public IntPtr ELogFunctionPtr;
         }
@@ -107,19 +107,19 @@ namespace PlClr
 
                 var unmanagedInterface = System.Runtime.InteropServices.Marshal.PtrToStructure<PlClrUnmanagedInterface>(arg);
 
-                if (unmanagedInterface.PallocFunctionPtr == IntPtr.Zero)
+                if (unmanagedInterface.PAllocFunctionPtr == IntPtr.Zero)
                 {
-                    Console.Error.WriteLine($"Field {nameof(unmanagedInterface.PallocFunctionPtr)} in struct {nameof(PlClrUnmanagedInterface)} must not be NULL");
+                    Console.Error.WriteLine($"Field {nameof(unmanagedInterface.PAllocFunctionPtr)} in struct {nameof(PlClrUnmanagedInterface)} must not be NULL");
                     return IntPtr.Zero;
                 }
-                if (unmanagedInterface.Palloc0FunctionPtr == IntPtr.Zero)
+                if (unmanagedInterface.PAlloc0FunctionPtr == IntPtr.Zero)
                 {
-                    Console.Error.WriteLine($"Field {nameof(unmanagedInterface.Palloc0FunctionPtr)} in struct {nameof(PlClrUnmanagedInterface)} must not be NULL");
+                    Console.Error.WriteLine($"Field {nameof(unmanagedInterface.PAlloc0FunctionPtr)} in struct {nameof(PlClrUnmanagedInterface)} must not be NULL");
                     return IntPtr.Zero;
                 }
-                if (unmanagedInterface.RePallocFunctionPtr == IntPtr.Zero)
+                if (unmanagedInterface.RePAllocFunctionPtr == IntPtr.Zero)
                 {
-                    Console.Error.WriteLine($"Field {nameof(unmanagedInterface.RePallocFunctionPtr)} in struct {nameof(PlClrUnmanagedInterface)} must not be NULL");
+                    Console.Error.WriteLine($"Field {nameof(unmanagedInterface.RePAllocFunctionPtr)} in struct {nameof(PlClrUnmanagedInterface)} must not be NULL");
                     return IntPtr.Zero;
                 }
                 if (unmanagedInterface.PFreeFunctionPtr == IntPtr.Zero)
@@ -133,9 +133,9 @@ namespace PlClr
                     return IntPtr.Zero;
                 }
 
-                var palloc = System.Runtime.InteropServices.Marshal.GetDelegateForFunctionPointer<PAllocDelegate>(unmanagedInterface.PallocFunctionPtr);
-                var palloc0 = System.Runtime.InteropServices.Marshal.GetDelegateForFunctionPointer<PAllocDelegate>(unmanagedInterface.Palloc0FunctionPtr);
-                var repalloc = System.Runtime.InteropServices.Marshal.GetDelegateForFunctionPointer<RePAllocDelegate>(unmanagedInterface.RePallocFunctionPtr);
+                var palloc = System.Runtime.InteropServices.Marshal.GetDelegateForFunctionPointer<PAllocDelegate>(unmanagedInterface.PAllocFunctionPtr);
+                var palloc0 = System.Runtime.InteropServices.Marshal.GetDelegateForFunctionPointer<PAllocDelegate>(unmanagedInterface.PAlloc0FunctionPtr);
+                var repalloc = System.Runtime.InteropServices.Marshal.GetDelegateForFunctionPointer<RePAllocDelegate>(unmanagedInterface.RePAllocFunctionPtr);
                 var pfree = System.Runtime.InteropServices.Marshal.GetDelegateForFunctionPointer<PFreeDelegate>(unmanagedInterface.PFreeFunctionPtr);
                 var elog = System.Runtime.InteropServices.Marshal.GetDelegateForFunctionPointer<ELogDelegate>(unmanagedInterface.ELogFunctionPtr);
 
@@ -193,7 +193,7 @@ namespace PlClr
                     if (functionName == null)
                     {
                         ServerLog.ELog(SeverityLevel.Error, "The Function name must not be NULL");
-                        // unreachable as Elog >= Error will tear down th process.
+                        // unreachable as Elog >= Error will tear down the process.
                         throw new Exception("Unreachable");
                     }
 
@@ -201,7 +201,7 @@ namespace PlClr
                     if (functionBody == null)
                     {
                         ServerLog.ELog(SeverityLevel.Error, "The Function body must not be NULL");
-                        // unreachable as Elog >= Error will tear down th process.
+                        // unreachable as Elog >= Error will tear down the process.
                         throw new Exception("Unreachable");
                     }
 
@@ -213,7 +213,7 @@ namespace PlClr
                     if (ci.ArgumentTypes == IntPtr.Zero)
                     {
                         ServerLog.ELog(SeverityLevel.Error, $"The Function has {nArgs} Arguments but the array of argument types is empty");
-                        // unreachable as Elog >= Error will tear down th process.
+                        // unreachable as Elog >= Error will tear down the process.
                         throw new Exception("Unreachable");
                     }
 
