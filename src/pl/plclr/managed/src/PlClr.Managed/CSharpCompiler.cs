@@ -13,7 +13,7 @@ namespace PlClr
 {
     internal static class CSharpCompiler
     {
-        public static FunctionCallDelegate? Compile(FunctionCompileInfo func)
+        public static FunctionCallDelegate Compile(FunctionCompileInfo func)
         {
             var className = $"PlClrClass_{func.FunctionOid}";
             var safeMethodName = GetSafeFunctionName(func.FunctionName);
@@ -68,9 +68,7 @@ namespace PlClr
                 .AppendLine("}");
 
             var generatedCode = builder.ToString();
-#if DEBUG
-            ServerLog.ELog(SeverityLevel.Debug1, $"PL/CLR generated code:\n{generatedCode}\n");
-#endif
+            Debug.WriteLine($"PL/CLR generated code:\n{generatedCode}");
             var tree = CSharpSyntaxTree.ParseText(generatedCode);
 
             var options = new CSharpCompilationOptions(OutputKind.DynamicallyLinkedLibrary);
@@ -110,38 +108,37 @@ namespace PlClr
                 var assembly = AssemblyLoadContext.GetLoadContext(typeof(CSharpCompiler).Assembly)!.LoadFromStream(ms);
                 return (FunctionCallDelegate)assembly.GetType(className)!.GetMethod($"Execute_{safeMethodName}")!.CreateDelegate(typeof(FunctionCallDelegate));
             }
-            else
+
+            static string GetDiagnostics(EmitResult result, DiagnosticSeverity level)
+                => string.Join(Environment.NewLine,
+                    result.Diagnostics
+                        .Where(d => !d.IsSuppressed && d.Severity == level)
+                        .OrderBy(d => d.Location.IsInSource ? d.Location.SourceSpan.Start : int.MaxValue)
+                        .Select(d => d.ToString()));
+
+            var infos = GetDiagnostics(res, DiagnosticSeverity.Info);
+            if (infos.Length > 0)
             {
-                static string GetDiagnostics(EmitResult result, DiagnosticSeverity level)
-                    => string.Join(Environment.NewLine,
-                        result.Diagnostics
-                            .Where(d => !d.IsSuppressed && d.Severity == level)
-                            .OrderBy(d => d.Location.IsInSource ? d.Location.SourceSpan.Start : int.MaxValue)
-                            .Select(d => d.ToString()));
-
-                var infos = GetDiagnostics(res, DiagnosticSeverity.Info);
-                if (infos.Length > 0)
-                {
-                    Debug.WriteLine(infos);
-                    ServerLog.ELog(SeverityLevel.Info, infos);
-                }
-
-                var warnings = GetDiagnostics(res, DiagnosticSeverity.Warning);
-                if (warnings.Length > 0)
-                {
-                    Debug.WriteLine(warnings);
-                    ServerLog.ELog(SeverityLevel.Warning, warnings);
-                }
-
-                var errors = GetDiagnostics(res, DiagnosticSeverity.Error);
-                if (errors.Length > 0)
-                {
-                    Debug.WriteLine(errors);
-                    ServerLog.ELog(SeverityLevel.Error, errors);
-                }
-
-                return null;
+                Debug.WriteLine(infos);
+                ServerLog.ELog(SeverityLevel.Info, infos);
             }
+
+            var warnings = GetDiagnostics(res, DiagnosticSeverity.Warning);
+            if (warnings.Length > 0)
+            {
+                Debug.WriteLine(warnings);
+                ServerLog.ELog(SeverityLevel.Warning, warnings);
+            }
+
+            var errors = GetDiagnostics(res, DiagnosticSeverity.Error);
+            if (errors.Length > 0)
+            {
+                Debug.WriteLine(errors);
+                ServerLog.ELog(SeverityLevel.Error, errors);
+            }
+
+            // unreachable as Elog >= Error will tear down the process.
+            throw new Exception("Unreachable");
         }
 
         private static string GetSafeFunctionName(string functionName)

@@ -23,8 +23,11 @@ namespace PlClr.Managed.Tests
             _currentAddress = _baseAddress;
         }
 
+        public ulong TotalBytesPAlloc0 { get; private set; }
         public ulong TotalBytesPAlloc { get; private set; }
         public ulong TotalBytesPFree { get; private set; }
+        public ulong TotalBytesRePAlloc { get; private set; }
+        public ulong TotalBytesRePAllocFree { get; private set; }
 
         public IntPtr PAlloc(ulong size)
         {
@@ -34,8 +37,8 @@ namespace PlClr.Managed.Tests
             if (size == 0)
                 return IntPtr.Zero;
 
-            var freedChunkKey = IntPtr.Zero;
-            TotalBytesPAlloc += size;
+            var retVal = IntPtr.Zero;
+            var nextBestChunkKey = IntPtr.Zero;
 
             // First we look if we can recycle some memory
             foreach (var freedChunk in _freedChunks)
@@ -46,35 +49,42 @@ namespace PlClr.Managed.Tests
                 {
                     _allocatedChunks.Add(freedChunk.Key, size);
                     _freedChunks.Remove(freedChunk.Key);
-                    return freedChunk.Key;
+                    retVal =  freedChunk.Key;
+                    break;
                 }
                 // If we have a chunk that is bigger than the requested chunk
                 // we mark it but we keep on looking for a perfect match
                 if (freedChunk.Value > size)
                 {
-                    freedChunkKey = freedChunk.Key;
+                    nextBestChunkKey = freedChunk.Key;
                 }
             }
 
-            if (freedChunkKey != IntPtr.Zero)
+            if (retVal == IntPtr.Zero)
             {
-                var newSize = _freedChunks[freedChunkKey] - size;
-                var newAddress = freedChunkKey + (int)size;
-                _allocatedChunks.Add(freedChunkKey, size);
-                _freedChunks.Remove(freedChunkKey);
-                _freedChunks.Add(newAddress, newSize);
-                return freedChunkKey;
+                if (nextBestChunkKey != IntPtr.Zero)
+                {
+                    var newSize = _freedChunks[nextBestChunkKey] - size;
+                    var newAddress = nextBestChunkKey + (int)size;
+                    _allocatedChunks.Add(nextBestChunkKey, size);
+                    _freedChunks.Remove(nextBestChunkKey);
+                    _freedChunks.Add(newAddress, newSize);
+                    retVal = nextBestChunkKey;
+                }
+                else if (BytesLeft < size)
+                {
+                    TotalBytesPAlloc -= size;
+                    throw new OutOfMemoryException();
+                }
+                else
+                {
+                    _allocatedChunks.Add(_currentAddress, size);
+                    retVal = _currentAddress;
+                    _currentAddress += (int)size;
+                }
             }
 
-            if (BytesLeft < size)
-            {
-                TotalBytesPAlloc -= size;
-                throw new OutOfMemoryException();
-            }
-
-            var retVal = _currentAddress;
-            _allocatedChunks.Add(_currentAddress, size);
-            _currentAddress += (int)size;
+            TotalBytesPAlloc += size;
             return retVal;
         }
 
@@ -90,6 +100,8 @@ namespace PlClr.Managed.Tests
                 buffer[i] = 0;
             }
 
+            TotalBytesPAlloc -= size;
+            TotalBytesPAlloc0 += size;
             return ptr;
         }
 
@@ -103,15 +115,14 @@ namespace PlClr.Managed.Tests
                     "You can not RePAlloc memory that isn't allocated.");
 
             IntPtr newPtr;
+            var oldSize = _allocatedChunks[oldPtr];
             if (newSize > 0)
             {
-                var oldSize = _allocatedChunks[oldPtr];
                 if (newSize < oldSize)
                 {
                     var freedSize = oldSize - newSize;
                     _allocatedChunks[oldPtr] = newSize;
                     _freedChunks[oldPtr + (int) newSize] = freedSize;
-                    TotalBytesPFree += freedSize;
                     newPtr = oldPtr;
                 }
                 else if (newSize == oldSize)
@@ -121,15 +132,21 @@ namespace PlClr.Managed.Tests
                 else
                 {
                     newPtr = PAlloc(newSize);
+                    TotalBytesPAlloc -= newSize;
                     new ReadOnlySpan<byte>((void*)oldPtr, (int)oldSize).CopyTo(new Span<byte>((void*)newPtr, (int)newSize));
                     PFree(oldPtr);
+                    TotalBytesPFree -= oldSize;
                 }
             }
             else
             {
                 newPtr = IntPtr.Zero;
                 PFree(oldPtr);
+                TotalBytesPFree -= oldSize;
             }
+
+            TotalBytesRePAlloc += newSize;
+            TotalBytesRePAllocFree += oldSize;
             return newPtr;
         }
 

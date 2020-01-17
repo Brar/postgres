@@ -12,7 +12,7 @@ namespace PlClr.Managed.Tests.SelfTests
         {
             using var memoryContext = new MemoryContext();
 
-            memoryContext.PAlloc(8ul);
+            var ptr = memoryContext.PAlloc(8ul);
 
             Assert.Equal(8ul, memoryContext.TotalBytesPAlloc);
 
@@ -22,7 +22,87 @@ namespace PlClr.Managed.Tests.SelfTests
 
             memoryContext.PAlloc0(16ul);
 
-            Assert.Equal(32ul, memoryContext.TotalBytesPAlloc);
+            Assert.Equal(16ul, memoryContext.TotalBytesPAlloc);
+
+            memoryContext.RePAlloc(ptr, 16ul);
+
+            Assert.Equal(16ul, memoryContext.TotalBytesPAlloc);
+        }
+
+        [Fact]
+        void TotalBytesPAlloc0ReportsCorrectValue()
+        {
+            using var memoryContext = new MemoryContext();
+
+            var ptr = memoryContext.PAlloc0(8ul);
+
+            Assert.Equal(8ul, memoryContext.TotalBytesPAlloc0);
+
+            memoryContext.PAlloc0(8ul);
+
+            Assert.Equal(16ul, memoryContext.TotalBytesPAlloc0);
+
+            memoryContext.PAlloc(16ul);
+
+            Assert.Equal(16ul, memoryContext.TotalBytesPAlloc0);
+
+            memoryContext.RePAlloc(ptr, 16ul);
+
+            Assert.Equal(16ul, memoryContext.TotalBytesPAlloc0);
+        }
+
+        [Fact]
+        void TotalBytesRePAllocReportsCorrectValue()
+        {
+            using var memoryContext = new MemoryContext();
+
+            var ptr = memoryContext.PAlloc(8ul); 
+            ptr = memoryContext.RePAlloc(ptr, 8ul);
+
+            Assert.Equal(8ul, memoryContext.TotalBytesRePAlloc);
+
+            ptr = memoryContext.RePAlloc(ptr, 4ul);
+
+            Assert.Equal(12ul, memoryContext.TotalBytesRePAlloc);
+
+            ptr = memoryContext.RePAlloc(ptr, 8ul);
+
+            Assert.Equal(20ul, memoryContext.TotalBytesRePAlloc);
+
+            memoryContext.PAlloc(16ul);
+
+            Assert.Equal(20ul, memoryContext.TotalBytesRePAlloc);
+
+            memoryContext.PAlloc0(16ul);
+
+            Assert.Equal(20ul, memoryContext.TotalBytesRePAlloc);
+        }
+
+        [Fact]
+        void TotalBytesRePAllocFreeReportsCorrectValue()
+        {
+            using var memoryContext = new MemoryContext();
+
+            var ptr = memoryContext.PAlloc(8ul); 
+            ptr = memoryContext.RePAlloc(ptr, 8ul);
+
+            Assert.Equal(8ul, memoryContext.TotalBytesRePAllocFree);
+
+            ptr = memoryContext.RePAlloc(ptr, 4ul);
+
+            Assert.Equal(16ul, memoryContext.TotalBytesRePAllocFree);
+
+            ptr = memoryContext.RePAlloc(ptr, 8ul);
+
+            Assert.Equal(20ul, memoryContext.TotalBytesRePAllocFree);
+
+            memoryContext.PAlloc(16ul);
+
+            Assert.Equal(20ul, memoryContext.TotalBytesRePAllocFree);
+
+            memoryContext.PAlloc0(16ul);
+
+            Assert.Equal(20ul, memoryContext.TotalBytesRePAllocFree);
         }
 
         [Fact]
@@ -40,10 +120,10 @@ namespace PlClr.Managed.Tests.SelfTests
 
             Assert.Equal(16ul, memoryContext.TotalBytesPFree);
 
-            ptr = memoryContext.PAlloc(16ul);
-            memoryContext.PFree(ptr);
+            ptr = memoryContext.PAlloc0(16ul);
+            memoryContext.RePAlloc(ptr, 16ul);
 
-            Assert.Equal(32ul, memoryContext.TotalBytesPFree);
+            Assert.Equal(16ul, memoryContext.TotalBytesPFree);
         }
 
         [Fact]
@@ -423,7 +503,7 @@ namespace PlClr.Managed.Tests.SelfTests
             Assert.NotEqual(IntPtr.Zero, ptr);
             Assert.Equal(0L, bufferContent);
             Assert.Equal(memoryContext.PAlloc0, palloc0Delegate);
-            Assert.Equal(8ul, memoryContext.TotalBytesPAlloc);
+            Assert.Equal(8ul, memoryContext.TotalBytesPAlloc0);
             Assert.Equal(8ul, memoryContext.TotalBytesPFree);
         }
 
@@ -452,8 +532,10 @@ namespace PlClr.Managed.Tests.SelfTests
             Assert.NotEqual(IntPtr.Zero, repallocPtr);
             Assert.NotEqual(IntPtr.Zero, ptr2);
             Assert.Equal(memoryContext.RePAlloc, repallocDelegate);
-            Assert.Equal(12ul, memoryContext.TotalBytesPAlloc);
-            Assert.Equal(12ul, memoryContext.TotalBytesPFree);
+            Assert.Equal(4ul, memoryContext.TotalBytesPAlloc);
+            Assert.Equal(8ul, memoryContext.TotalBytesRePAlloc);
+            Assert.Equal(4ul, memoryContext.TotalBytesRePAllocFree);
+            Assert.Equal(8ul, memoryContext.TotalBytesPFree);
         }
 
         [Fact]
