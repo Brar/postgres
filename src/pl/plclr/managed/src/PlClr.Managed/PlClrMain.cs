@@ -227,7 +227,7 @@ namespace PlClr
                         var argNamePtrs = new IntPtr[nArgs];
                         new ReadOnlySpan<IntPtr>((void*)ci.ArgumentNames, nArgs).CopyTo(new Span<IntPtr>(argNamePtrs, 0, nArgs));
                         argNames = new string[nArgs];
-                        for (int i = 0; i < nArgs; i++)
+                        for (var i = 0; i < nArgs; i++)
                         {
                             // Missing argument names are an empty string not null so we don't expect null here
                             argNames[i] = Marshal.PtrToStringPFree(argNamePtrs[i])!;
