@@ -164,8 +164,18 @@ namespace PlClr
         {
             try
             {
-                if (argLength < System.Runtime.InteropServices.Marshal.SizeOf(typeof(FunctionCompileInfoPrivate)))
+                if (arg == IntPtr.Zero)
+                {
+                    ServerLog.ELog(SeverityLevel.Error, $"Argument {nameof(arg)} must not be NULL");
                     return IntPtr.Zero;
+                }
+
+                if (argLength < System.Runtime.InteropServices.Marshal.SizeOf(typeof(FunctionCompileInfoPrivate)))
+                {
+                    ServerLog.ELog(SeverityLevel.Error,
+                        $"Argument {nameof(argLength)} is {argLength} but is expected to be greater than or equal to {System.Runtime.InteropServices.Marshal.SizeOf<PlClrUnmanagedInterface>()}");
+                    return IntPtr.Zero;
+                }
 
                 var compileInfo = GetFunctionCompileInfo(arg);
 
