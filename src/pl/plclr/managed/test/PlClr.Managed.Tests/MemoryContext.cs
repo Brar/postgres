@@ -199,36 +199,36 @@ namespace PlClr.Managed.Tests
                 _freedChunks.Add(ptr, size);
         }
 
-        public IntPtr GetPAllocFunctionPointer()
+        public IntPtr GetPAllocFunctionPointer(PAllocDelegate? pAllocDelegate = null)
         {
             if (_disposed)
                 throw new ObjectDisposedException(nameof(MemoryContext));
  
-            return System.Runtime.InteropServices.Marshal.GetFunctionPointerForDelegate<PAllocDelegate>(PAlloc);
+            return System.Runtime.InteropServices.Marshal.GetFunctionPointerForDelegate(pAllocDelegate ?? PAlloc);
         }
 
-        public IntPtr GetPAlloc0FunctionPointer()
+        public IntPtr GetPAlloc0FunctionPointer(PAllocDelegate? pAlloc0Delegate = null)
         {
             if (_disposed)
                 throw new ObjectDisposedException(nameof(MemoryContext));
  
-            return System.Runtime.InteropServices.Marshal.GetFunctionPointerForDelegate<PAllocDelegate>(PAlloc0);
+            return System.Runtime.InteropServices.Marshal.GetFunctionPointerForDelegate(pAlloc0Delegate ?? PAlloc0);
         }
 
-        public IntPtr GetRePAllocFunctionPointer()
+        public IntPtr GetRePAllocFunctionPointer(RePAllocDelegate? rePAllocDelegate = null)
         {
             if (_disposed)
                 throw new ObjectDisposedException(nameof(MemoryContext));
  
-            return System.Runtime.InteropServices.Marshal.GetFunctionPointerForDelegate<RePAllocDelegate>(RePAlloc);
+            return System.Runtime.InteropServices.Marshal.GetFunctionPointerForDelegate(rePAllocDelegate ?? RePAlloc);
         }
 
-        public IntPtr GetPFreeFunctionPointer()
+        public IntPtr GetPFreeFunctionPointer(PFreeDelegate? pFreeDelegate = null)
         {
             if (_disposed)
                 throw new ObjectDisposedException(nameof(MemoryContext));
  
-            return System.Runtime.InteropServices.Marshal.GetFunctionPointerForDelegate<PFreeDelegate>(PFree);
+            return System.Runtime.InteropServices.Marshal.GetFunctionPointerForDelegate(pFreeDelegate ?? PFree);
         }
 
         public void Dispose()
