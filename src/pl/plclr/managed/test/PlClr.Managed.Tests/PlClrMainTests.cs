@@ -211,6 +211,37 @@ namespace PlClr.Managed.Tests
         }
 
         [Fact]
+        public void SetupUnexpectedException()
+        {
+            using var h = new TestHelper();
+            PlClrUnmanagedInterface i;
+            i.ELogFunctionPtr = h.Log.GetELogFunctionPointer();
+            i.PFreeFunctionPtr = h.MemoryContext.GetPFreeFunctionPointer();
+            i.PAlloc0FunctionPtr = h.MemoryContext.GetPAlloc0FunctionPointer();
+            i.PAllocFunctionPtr = h.MemoryContext.GetPAllocFunctionPointer(ThrowingPAlloc);
+            i.RePAllocFunctionPtr = h.MemoryContext.GetRePAllocFunctionPointer();
+            var unmanagedInterfaceSize = System.Runtime.InteropServices.Marshal.SizeOf<PlClrUnmanagedInterface>();
+            var unmanagedInterfacePointer = h.AllocCoTaskMem(unmanagedInterfaceSize);
+            System.Runtime.InteropServices.Marshal.StructureToPtr(i, unmanagedInterfacePointer, false);
+
+            var resultPtr = PlClrMain.Setup(unmanagedInterfacePointer, unmanagedInterfaceSize);
+
+            Assert.Equal(IntPtr.Zero, resultPtr);
+            Assert.Equal(0UL, h.MemoryContext.TotalBytesPAlloc);
+            Assert.Equal(0UL, h.MemoryContext.TotalBytesPAlloc0);
+            Assert.Equal(0UL, h.MemoryContext.TotalBytesRePAlloc);
+            Assert.Equal(0UL, h.MemoryContext.TotalBytesRePAllocFree);
+            Assert.Equal(0UL, h.MemoryContext.TotalBytesPFree);
+            Assert.Empty(h.Log.ConsoleOut);
+            Assert.StartsWith(
+                $"An unexpected exception occured during PL/CLR setup: System.InvalidOperationException: This is a Test!",
+                h.Log.ConsoleError);
+            Assert.Empty(h.Log.ELogMessages);
+
+            static IntPtr ThrowingPAlloc(ulong size) => throw new InvalidOperationException("This is a Test!");
+        }
+
+        [Fact]
         public void CompileSimpleSuccess()
         {
             using var h = new TestHelper();
