@@ -261,6 +261,31 @@ namespace PlClr.Managed.Tests
         }
 
         [Fact]
+        public void CompileNullPtr()
+        {
+            using var h = new TestHelper();
+            var (_, functionCompileInfoSize) = h.GetFunctionCompileInfo();
+
+            var resultPtr = PlClrMain.Compile(IntPtr.Zero, functionCompileInfoSize);
+
+            Assert.Equal(IntPtr.Zero, resultPtr);
+            Assert.Equal(135UL, h.MemoryContext.TotalBytesPAlloc);
+            Assert.Equal(0UL, h.MemoryContext.TotalBytesPAlloc0);
+            Assert.Equal(0UL, h.MemoryContext.TotalBytesRePAlloc);
+            Assert.Equal(0UL, h.MemoryContext.TotalBytesRePAllocFree);
+            Assert.Equal(107UL, h.MemoryContext.TotalBytesPFree);
+            Assert.Empty(h.Log.ConsoleOut);
+            Assert.Empty(h.Log.ConsoleError);
+            Assert.Collection(h.Log.ELogMessages,
+                message =>
+                {
+                    Assert.Equal(SeverityLevel.Error, message.Item1);
+                    Assert.Equal("Argument arg must not be NULL", message.Item2);
+                }
+                );
+        }
+
+        [Fact]
         public void CompileInt32InArgsWithoutNameSuccess()
         {
             using var h = new TestHelper();
