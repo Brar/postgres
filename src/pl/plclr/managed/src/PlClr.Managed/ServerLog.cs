@@ -37,24 +37,30 @@ namespace PlClr
         /// <param name="errorHint">Supplies an optional "hint" message;
         /// this is to be used when offering suggestions about how to fix the problem,
         /// as opposed to factual details about what went wrong.</param>
+        /// <param name="errorPosition">Specifies the textual location of an error within a query string or function body.</param>
         /// <param name="errorDataType">Specifies a data type whose name and schema name should be included as auxiliary fields in the error report.</param>
         /// <returns></returns>
         public static PlClrUnreachableException? EReport(
             SeverityLevel level,
-            string? errorMessageInternal,
+            string errorMessageInternal,
             PostgreSqlErrorCode? errorCode = null,
             string? errorDetailInternal = null,
             string? errorDetailLog = null,
             string? errorHint = null,
+            int? errorPosition = null,
             uint? errorDataType = null)
         {
+            if (errorMessageInternal == null)
+                throw new ArgumentNullException(nameof(errorMessageInternal));
+
             _ereportDelegate!(
                 (int)level,
-                Marshal.ToPtrPalloc((int?)errorCode),
                 Marshal.ToPtrPalloc(errorMessageInternal),
+                Marshal.ToPtrPalloc((int?)errorCode),
                 Marshal.ToPtrPalloc(errorDetailInternal),
                 Marshal.ToPtrPalloc(errorDetailLog),
                 Marshal.ToPtrPalloc(errorHint),
+                Marshal.ToPtrPalloc(errorPosition),
                 Marshal.ToPtrPalloc(errorDataType)
                 );
 

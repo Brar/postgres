@@ -17,9 +17,12 @@ typedef struct PlClrFunctionCompileResult
     void* ExecuteDelegatePtr;
 } PlClrFunctionCompileResult, *PlClrFunctionCompileResultPtr;
 
+char* plclr_funcname;
 
 /* A context appropriate for short-term allocs during compilation */
 MemoryContext plclr_compile_tmp_cxt;
+
+static void plclr_compile_error_callback(void*);
 
 PlClr_function *
 plclr_compile_function(FunctionCallInfo fcinfo, HeapTuple procTup, PlClr_function* function, bool forValidator)
@@ -29,13 +32,14 @@ plclr_compile_function(FunctionCallInfo fcinfo, HeapTuple procTup, PlClr_functio
 	bool		is_event_trigger = CALLED_AS_EVENT_TRIGGER(fcinfo);
 	Datum		prosrcdatum;
 	bool		isnull;
+	char	   *proc_source;
 	PlClrFunctionCompileInfo compileInfo;
 	//HeapTuple	typeTup;
 	//Form_pg_type typeStruct;
 	//PLpgSQL_variable *var;
 	//PLpgSQL_rec *rec;
 	//int			i;
-	//ErrorContextCallback plerrcontext;
+	ErrorContextCallback plerrcontext;
 	//int			parse_rc;
 	//Oid			rettypeid;
 	int			numargs;
@@ -48,6 +52,22 @@ plclr_compile_function(FunctionCallInfo fcinfo, HeapTuple procTup, PlClr_functio
 	//PLpgSQL_variable **out_arg_variables;
 	MemoryContext func_cxt;
 	PlClrFunctionCompileResultPtr compileResult;
+
+	prosrcdatum = SysCacheGetAttr(PROCOID, procTup,
+								  Anum_pg_proc_prosrc, &isnull);
+	if (isnull)
+		elog(ERROR, "null prosrc");
+	proc_source = TextDatumGetCString(prosrcdatum);
+
+	plclr_funcname = pstrdup(NameStr(procStruct->proname));
+
+	/*
+	 * Setup error traceback support for ereport()
+	 */
+	plerrcontext.callback = plclr_compile_error_callback;
+	plerrcontext.arg = forValidator ? proc_source : NULL;
+	plerrcontext.previous = error_context_stack;
+	error_context_stack = &plerrcontext;
 
 	/*
 	 * Create the new function struct, if not done already.  The function
@@ -109,12 +129,8 @@ plclr_compile_function(FunctionCallInfo fcinfo, HeapTuple procTup, PlClr_functio
 			procStruct = (Form_pg_proc) GETSTRUCT(procTup);
 		    compileInfo.ReturnValueType = procStruct->prorettype;
 		    compileInfo.ReturnsSet = procStruct->proretset;
-		    compileInfo.FunctionName = server_encoding_to_clr_char(NameStr(procStruct->proname));
-
-		    prosrcdatum = SysCacheGetAttr(PROCOID, procTup, Anum_pg_proc_prosrc, &isnull);
-		    if (isnull)
-		        elog(ERROR, "null prosrc");
-		    compileInfo.FunctionBody = server_encoding_to_clr_char(TextDatumGetCString(prosrcdatum));
+		    compileInfo.FunctionName = server_encoding_to_clr_char(plclr_funcname);
+		    compileInfo.FunctionBody = server_encoding_to_clr_char(proc_source);
 
 		    numargs = get_func_arg_info(procTup, &argtypes, &argnames, &argmodes);
 
@@ -180,5 +196,35 @@ plclr_compile_function(FunctionCallInfo fcinfo, HeapTuple procTup, PlClr_functio
 			break;
 	}
 
+	error_context_stack = plerrcontext.previous;
+	plclr_funcname = NULL;
+
 	return function;
+}
+
+/*
+ * error context callback to let us supply a call-stack traceback.
+ * If we are validating or executing an anonymous code block, the function
+ * source text is passed as an argument.
+ */
+static void
+plclr_compile_error_callback(void *arg)
+{
+	if (arg)
+	{
+		/*
+		 * Try to convert syntax error position to reference text of original
+		 * CREATE FUNCTION or DO command.
+		 */
+		if (function_parse_error_transpose((const char *) arg))
+			return;
+
+		/*
+		 * Done if a syntax error position was reported; otherwise we have to
+		 * fall back to a "near line N" report.
+		 */
+	}
+
+	if (plclr_funcname)
+		errcontext("Compilation of PL/CLR function \"%s\"", plclr_funcname);
 }
