@@ -97,3 +97,49 @@ server_encoding_to_clr_char(const char *input)
 
 	return output;
 }
+
+char* clr_char_to_server_encoding(clr_char* input)
+{
+	int			db_encoding = GetDatabaseEncoding();
+	size_t		output_length;
+	char*		output;
+
+#ifdef WIN32
+	unsigned	codepage;
+	codepage = pg_enc2name_tbl[db_encoding].codepage;
+
+	/*
+	 * On Windows we try to directly convert our clr_char* (which is UTF-16 here)
+	 * to the target code page if our server encoding has a code page.
+	 * This includes the UTF-8 server encoding as target code page
+	 */
+	if (codepage != 0 || db_encoding != PG_UTF8)
+	{
+		output_length = (size_t)WideCharToMultiByte(codepage, 0, input, -1, NULL, 0, NULL, NULL) - 1;
+		output = (char*) palloc(output_length + 1);
+		WideCharToMultiByte(codepage, 0, input, -1, output, output_length, NULL, NULL);
+	}
+	else /* If we don't have a target code page, we have convert to UTF-8 first if we are on Windows*/
+	{
+		size_t utf8_length = (size_t)WideCharToMultiByte(CP_UTF8, 0, input, -1, NULL, 0, NULL, NULL) - 1;
+		char* utf8 = (char*) palloc(utf8_length + 1);
+		WideCharToMultiByte(codepage, 0, input, -1, utf8, utf8_length, NULL, NULL);
+#else
+	/* If we are on a Non-Windows platform and expect UTF-8, we have got nothing to do */
+	if (db_encoding == PG_UTF8)
+	{
+		output_length = strlen(input);
+		output = input;
+	}
+	/* If we expect an encoding that is not UTF-8 we have to convert the input */
+	else
+	{
+		size_t utf8_length = strlen(input);
+		char* utf8 = input;
+#endif
+		output = (char*) pg_do_encoding_conversion((unsigned char *) utf8, utf8_length, PG_UTF8, db_encoding);
+		if (output != utf8)
+			output_length = strlen(output);
+	}
+	return output;
+}
