@@ -11,6 +11,7 @@
     int utf8_get_required_utf16le_buffer_size(char* utf8_string);
 #endif
 
-clr_char* server_encoding_to_clr_char(const char *input);
+clr_char* server_encoding_to_clr_char(const char* input);
+char* clr_char_to_server_encoding(clr_char* input);
 
 #endif // PLCLR_STRING_H

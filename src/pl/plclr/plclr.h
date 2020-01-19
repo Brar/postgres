@@ -12,6 +12,10 @@
 #include "executor/spi.h"
 #include "utils/expandedrecord.h"
 
+/* define our text domain for translations */
+#undef TEXTDOMAIN
+#define TEXTDOMAIN PG_TEXTDOMAIN("plclr")
+
 
 #ifdef WIN32
     #ifdef _WCHAR_T_DEFINED
