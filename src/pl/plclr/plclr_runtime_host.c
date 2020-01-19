@@ -139,6 +139,7 @@ plclr_runtime_host_init(void)
 	setupInfo = palloc(sizeof(PlClrUnmanagedInterface));
 
 	setupInfo->ELogFunctionPtr = plclr_elog;
+	setupInfo->EReportFunctionPtr = plclr_ereport;
 	setupInfo->PFreeFunctionPtr = pfree;
 	setupInfo->Palloc0FunctionPtr = palloc0;
 	setupInfo->PallocFunctionPtr = palloc;
@@ -245,47 +246,31 @@ plclr_elog(int elevel, const char* message)
 }
 
 static void
-plclr_ereport(int elevel, int* errcode_value, void* errmsg_internal_value, void* errdetail_internal_value, void* errdetail_log_value, void* errhint_value, Oid* errdatatype_value)
+plclr_ereport(int elevel, int* errcode_value, const char* errmsg_internal_value, const char* errdetail_internal_value, const char* errdetail_log_value, const char* errhint_value, Oid* errdatatype_value)
 {
-	if (errcode_value != NULL)
-		errcode(*errcode_value);
-	if (errmsg_internal_value != NULL)
+	pg_prevent_errno_in_scope();
+	if (errstart(elevel, __FILE__, __LINE__, PG_FUNCNAME_MACRO, TEXTDOMAIN))
 	{
-		char* errmsg_internal_char_ptr = clr_char_to_server_encoding((clr_char*)errmsg_internal_value);
-		if (errmsg_internal_char_ptr != errmsg_internal_value)
-			pfree(errmsg_internal_value);
+		if (errcode_value != NULL)
+			errcode(*errcode_value);
+		if (errmsg_internal_value != NULL)
+			errmsg_internal("%s", errmsg_internal_value);
+		if (errdetail_internal_value != NULL)
+			errdetail_internal("%s", errdetail_internal_value);
+		if (errdetail_log_value != NULL)
+			errdetail_log("%s", errdetail_log_value);
+		if (errhint_value != NULL)
+			errhint("%s", errhint_value);
+		if (errdatatype_value != NULL)
+			errdatatype(*errdatatype_value);
 
-		errmsg_internal("%s", errmsg_internal_char_ptr);
+		errfinish(0);
 	}
-	if (errdetail_internal_value != NULL)
+	if (elevel >= ERROR)
 	{
-		char* errdetail_internal_char_ptr = clr_char_to_server_encoding((clr_char*)errdetail_internal_value);
-		if (errdetail_internal_char_ptr != errdetail_internal_value)
-			pfree(errdetail_internal_value);
-
-		errdetail_internal("%s", errdetail_internal_char_ptr);
+		/* hostfxr_close(cxt); */
+		pg_unreachable();
 	}
-	if (errdetail_log_value != NULL)
-	{
-		char* errdetail_log_char_ptr = clr_char_to_server_encoding((clr_char*)errdetail_log_value);
-		if (errdetail_log_char_ptr != errdetail_log_value)
-			pfree(errdetail_log_value);
-
-		errdetail_log("%s", errdetail_log_char_ptr);
-	}
-	if (errhint_value != NULL)
-	{
-		char* errhint_char_ptr = clr_char_to_server_encoding((clr_char*)errhint_value);
-		if (errhint_char_ptr != errhint_value)
-			pfree(errhint_value);
-
-		errhint("%s", errhint_char_ptr);
-	}
-	if (errdatatype_value != NULL)
-		errdatatype(*errdatatype_value);
-
-	ereport(elevel);
-	/* hostfxr_close(cxt); */
 }
 
 static void*
