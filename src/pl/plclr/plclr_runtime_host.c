@@ -24,7 +24,7 @@ typedef struct PlClrUnmanagedInterface
     void* (*RePallocFunctionPtr)(void*, Size);
     void (*PFreeFunctionPtr)(void*);
     void (*ELogFunctionPtr)(int, const char*);
-    void (*EReportFunctionPtr)(int, int*, void*, void*, void*, void*, Oid*);
+    void (*EReportFunctionPtr)(int, const char*, int*, const char*, const char*, const char*, int*, Oid*);
 	void* (*GetTextFunctionPtr)(Datum);
 } PlClrUnmanagedInterface, *PlClrUnmanagedInterfacePtr;
 
@@ -34,15 +34,10 @@ typedef void* (CORECLR_DELEGATE_CALLTYPE *PlClrMainDelegate)(void *arg, int arg_
 static void* open_dynamic_library(const clr_char* path);
 static char* get_last_dynamic_library_error(void);
 static void* get_export(void* lib, const char* name);
-static void plclr_elog(int, const char*);
-static void plclr_ereport(
-	int elevel,
-	int* errcode_value,
-	void* errmsg_internal_value,
-	void* errdetail_internal_value,
-	void* errdetail_log_value,
-	void* errhint_value,
-	Oid* errdatatype_value);
+static void plclr_elog(int elevel, const char* message);
+static void plclr_ereport(int elevel, const char* errmsg_internal_value, int* errcode_value,
+	const char* errdetail_internal_value, const char* errdetail_log_value, const char* errhint_value,
+	int* errposition_value, Oid* errdatatype_value);
 static void* plclr_get_text(Datum);
 
 /* Globals to hold managed exports */
@@ -241,27 +236,32 @@ get_last_dynamic_library_error(void)
 static void
 plclr_elog(int elevel, const char* message)
 {
+	/*
+	if (elevel >= ERROR)
+		hostfxr_close(cxt);
+	*/
 	elog(elevel, "%s", message);
-	/* hostfxr_close(cxt); */
 }
 
 static void
-plclr_ereport(int elevel, int* errcode_value, const char* errmsg_internal_value, const char* errdetail_internal_value, const char* errdetail_log_value, const char* errhint_value, Oid* errdatatype_value)
+plclr_ereport(int elevel, const char* errmsg_internal_value, int* errcode_value, const char* errdetail_internal_value, const char* errdetail_log_value, const char* errhint_value, int* errposition_value, Oid* errdatatype_value)
 {
 	pg_prevent_errno_in_scope();
 	
 	if (errstart(elevel, TEXTDOMAIN))
 	{
+		errmsg_internal("%s", errmsg_internal_value);
+
 		if (errcode_value != NULL)
 			errcode(*errcode_value);
-		if (errmsg_internal_value != NULL)
-			errmsg_internal("%s", errmsg_internal_value);
 		if (errdetail_internal_value != NULL)
 			errdetail_internal("%s", errdetail_internal_value);
 		if (errdetail_log_value != NULL)
 			errdetail_log("%s", errdetail_log_value);
 		if (errhint_value != NULL)
 			errhint("%s", errhint_value);
+		if (errposition_value != NULL)
+			errposition(*errposition_value);
 		if (errdatatype_value != NULL)
 			errdatatype(*errdatatype_value);
 

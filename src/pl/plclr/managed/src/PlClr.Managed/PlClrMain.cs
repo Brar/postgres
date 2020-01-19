@@ -11,7 +11,7 @@ namespace PlClr
     public delegate IntPtr RePAllocDelegate(IntPtr ptr, ulong size);
     public delegate void PFreeDelegate(IntPtr ptr);
     public delegate void ELogDelegate(int level, IntPtr message);
-    public delegate void EReportDelegate(int level, IntPtr errorCode, IntPtr errorMessageInternal, IntPtr errorDetailInternal, IntPtr errorDetailLog, IntPtr errorHint, IntPtr errorDataType);
+    public delegate void EReportDelegate(int level, IntPtr errorMessageInternal, IntPtr errorCode, IntPtr errorDetailInternal, IntPtr errorDetailLog, IntPtr errorHint, IntPtr errorPosition, IntPtr errorDataType);
     public delegate IntPtr PlClrMainDelegate(IntPtr args, int sizeBytes);
     public delegate IntPtr FunctionCallDelegate(NullableDatum[] values);
 
