@@ -171,8 +171,11 @@ namespace PlClr
                 // 4096 => typeof(regrole), // regrole
                 // 4097 => typeof(_regrole), // _regrole
                 // 5017 => typeof(pg_mcv_list), // pg_mcv_list
-                _ => throw new NotSupportedException($"The type with Oid {oid} is currently not supported by PL/CLR.")
-            };
+                _ => throw ServerLog.EReport(
+                    SeverityLevel.Error,
+                    errorMessageInternal: $"The type with Oid {oid} is currently not supported by PL/CLR.",
+                    errorDataType: oid)!
+    };
 
         public static Type GetTypeForOid(uint oid)
             => oid switch
@@ -341,7 +344,10 @@ namespace PlClr
                 // 4096 => typeof(regrole), // regrole
                 // 4097 => typeof(_regrole), // _regrole
                 // 5017 => typeof(pg_mcv_list), // pg_mcv_list
-                _ => throw new NotSupportedException($"The type with Oid {oid} is currently not supported by PL/CLR.")
+                _ => throw ServerLog.EReport(
+                    SeverityLevel.Error,
+                    errorMessageInternal: $"The type with Oid {oid} is currently not supported by PL/CLR.",
+                    errorDataType: oid)!
             };
     }
 }

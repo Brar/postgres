@@ -10,3 +10,4 @@ Next steps:
 - Implement returning sets
 - Implement support for OUT and INOUT arguments
 - call hostfxr_close on planned backend shutdown
+- generate PostgreSqlErrorCode values from src/include/utils/errcodes.txt

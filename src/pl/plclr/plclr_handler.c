@@ -55,7 +55,7 @@ plclr_call_handler(PG_FUNCTION_ARGS)
 	Datum		retval;
 	int			rc;
 
-	//Sleep(30000);
+	Sleep(15000);
 	nonatomic = fcinfo->context &&
 		IsA(fcinfo->context, CallContext) &&
 		!castNode(CallContext, fcinfo->context)->atomic;

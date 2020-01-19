@@ -1,6 +1,9 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
+
+[assembly: InternalsVisibleTo("PlClr.Managed.Tests")]
 
 namespace PlClr
 {
@@ -8,7 +11,7 @@ namespace PlClr
     public delegate IntPtr RePAllocDelegate(IntPtr ptr, ulong size);
     public delegate void PFreeDelegate(IntPtr ptr);
     public delegate void ELogDelegate(int level, IntPtr message);
-    // ReSharper disable once UnusedMember.Global
+    public delegate void EReportDelegate(int level, IntPtr errorCode, IntPtr errorMessageInternal, IntPtr errorDetailInternal, IntPtr errorDetailLog, IntPtr errorHint, IntPtr errorDataType);
     public delegate IntPtr PlClrMainDelegate(IntPtr args, int sizeBytes);
     public delegate IntPtr FunctionCallDelegate(NullableDatum[] values);
 
@@ -27,6 +30,7 @@ namespace PlClr
             public IntPtr RePAllocFunctionPtr;
             public IntPtr PFreeFunctionPtr;
             public IntPtr ELogFunctionPtr;
+            public IntPtr EReportFunctionPtr;
             public IntPtr GetTextFunctionPtr;
         }
 
@@ -144,10 +148,11 @@ namespace PlClr
                 var repalloc = System.Runtime.InteropServices.Marshal.GetDelegateForFunctionPointer<RePAllocDelegate>(unmanagedInterface.RePAllocFunctionPtr);
                 var pfree = System.Runtime.InteropServices.Marshal.GetDelegateForFunctionPointer<PFreeDelegate>(unmanagedInterface.PFreeFunctionPtr);
                 var elog = System.Runtime.InteropServices.Marshal.GetDelegateForFunctionPointer<ELogDelegate>(unmanagedInterface.ELogFunctionPtr);
+                var ereport = System.Runtime.InteropServices.Marshal.GetDelegateForFunctionPointer<EReportDelegate>(unmanagedInterface.EReportFunctionPtr);
                 var getString = System.Runtime.InteropServices.Marshal.GetDelegateForFunctionPointer<GetStringDelegate>(unmanagedInterface.GetTextFunctionPtr);
 
                 ServerMemory.Initialize(palloc, palloc0, repalloc, pfree);
-                ServerLog.Initialize(elog);
+                ServerLog.Initialize(elog, ereport);
                 ServerFunctions.Initialize(getString);
 
                 PlClrManagedInterface managedInterface;
@@ -207,7 +212,7 @@ namespace PlClr
                 {
                     var ci = System.Runtime.InteropServices.Marshal.PtrToStructure<FunctionCompileInfoPrivate>(arg);
 
-                    var functionName = Marshal.PtrToStringPFree(ci.FunctionNamePtr);
+                    var functionName = Marshal.ToStringPFree(ci.FunctionNamePtr);
                     if (functionName == null)
                     {
                         ServerLog.ELog(SeverityLevel.Error, "The Function name must not be NULL");
@@ -215,7 +220,7 @@ namespace PlClr
                         throw new Exception("Unreachable");
                     }
 
-                    var functionBody = Marshal.PtrToStringPFree(ci.FunctionBodyPtr);
+                    var functionBody = Marshal.ToStringPFree(ci.FunctionBodyPtr);
                     if (functionBody == null)
                     {
                         ServerLog.ELog(SeverityLevel.Error, "The Function body must not be NULL");
@@ -248,7 +253,7 @@ namespace PlClr
                         for (var i = 0; i < nArgs; i++)
                         {
                             // Missing argument names are an empty string not null so we don't expect null here
-                            argNames[i] = Marshal.PtrToStringPFree(argNamePtrs[i])!;
+                            argNames[i] = Marshal.ToStringPFree(argNamePtrs[i])!;
                         }
                         ServerMemory.PFree(ci.ArgumentNames);
                     }
