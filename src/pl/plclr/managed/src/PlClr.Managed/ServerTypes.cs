@@ -7,16 +7,16 @@ namespace PlClr
         public static string GetValueAccessMethodForOid(uint oid)
             => oid switch
             {
-                16 => "GetBool", // bool
+                16 => nameof(ServerFunctions.GetBool), // bool
                 // 17 => typeof(bytea), // bytea
                 // 18 => typeof(char), // char
                 // 19 => typeof(name), // name
-                20 => "GetInt64", // int8
-                21 => "GetInt16", // int2
+                20 => nameof(ServerFunctions.GetInt64), // int8
+                21 => nameof(ServerFunctions.GetInt16), // int2
                 // 22 => typeof(int2vector), // int2vector
-                23 => "GetInt32", // int4
+                23 => nameof(ServerFunctions.GetInt32), // int4
                 // 24 => typeof(regproc), // regproc
-                // 25 => typeof(string), // text
+                25 => nameof(ServerFunctions.GetString), // text
                 // 26 => typeof(uint), // oid
                 // 27 => typeof(tid), // tid
                 // 28 => typeof(xid), // xid

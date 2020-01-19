@@ -23,6 +23,7 @@ typedef struct PlClrUnmanagedInterface
     void* (*RePallocFunctionPtr)(void*, Size);
     void (*PFreeFunctionPtr)(void*);
     void (*ELogFunctionPtr)(int, const char*);
+	void* (*GetTextFunctionPtr)(Datum);
 } PlClrUnmanagedInterface, *PlClrUnmanagedInterfacePtr;
 
 typedef void* (CORECLR_DELEGATE_CALLTYPE *PlClrMainDelegate)(void *arg, int arg_size_in_bytes);
@@ -32,6 +33,7 @@ static void* open_dynamic_library(const clr_char* path);
 static char* get_last_dynamic_library_error(void);
 static void* get_export(void* lib, const char* name);
 static void plclr_elog(int, const char*);
+static void* plclr_get_text(Datum);
 
 /* Globals to hold managed exports */
 static hostfxr_close_fn hostfxr_close;
@@ -131,6 +133,7 @@ plclr_runtime_host_init(void)
 	setupInfo->Palloc0FunctionPtr = palloc0;
 	setupInfo->PallocFunctionPtr = palloc;
 	setupInfo->RePallocFunctionPtr = repalloc;
+	setupInfo->GetTextFunctionPtr = plclr_get_text;
 
 	plclrManagedInterface = PlClrMain_Setup(setupInfo, sizeof(PlClrUnmanagedInterface));
 
@@ -229,4 +232,16 @@ plclr_elog(int elevel, const char* message)
 {
 	elog(elevel, "%s", message);
 	/* hostfxr_close(cxt); */
+}
+
+static void*
+plclr_get_text(Datum arg)
+{
+	text* server_encoded_text = DatumGetTextPP(arg);
+	clr_char* clr_encoded_text = server_encoding_to_clr_char(VARDATA_ANY(server_encoded_text));
+
+	if ((Pointer) server_encoded_text != DatumGetPointer(arg))
+		pfree(server_encoded_text);
+
+	return (void*)clr_encoded_text;
 }

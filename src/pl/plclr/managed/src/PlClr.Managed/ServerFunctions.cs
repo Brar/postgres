@@ -4,8 +4,19 @@ using System.Text;
 
 namespace PlClr
 {
-    public static class ServerFunction
+    public delegate IntPtr GetStringDelegate(IntPtr argPtr);
+
+    public static class ServerFunctions
     {
+        private static GetStringDelegate? _getStringDelegate;
+
+        internal static void Initialize(
+            GetStringDelegate getStringDelegate
+        )
+        {
+            _getStringDelegate = getStringDelegate;
+        }
+
         private static readonly IntPtr One = new IntPtr(1);
 
         public static bool GetBool(IntPtr datum) => datum != IntPtr.Zero;
@@ -22,5 +33,7 @@ namespace PlClr
 
         public static long GetInt64(IntPtr datum) => (long) datum;
         public static IntPtr GetDatum(long value) => (IntPtr)value;
+
+        public static string GetString(IntPtr datum) => Marshal.PtrToStringPFree(_getStringDelegate!(datum))!;
     }
 }

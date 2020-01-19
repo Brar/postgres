@@ -27,6 +27,7 @@ namespace PlClr
             public IntPtr RePAllocFunctionPtr;
             public IntPtr PFreeFunctionPtr;
             public IntPtr ELogFunctionPtr;
+            public IntPtr GetTextFunctionPtr;
         }
 
         [StructLayout(LayoutKind.Sequential)]
@@ -132,15 +133,22 @@ namespace PlClr
                     Console.Error.WriteLine($"Field {nameof(unmanagedInterface.ELogFunctionPtr)} in struct {nameof(PlClrUnmanagedInterface)} must not be NULL");
                     return IntPtr.Zero;
                 }
+                if (unmanagedInterface.GetTextFunctionPtr == IntPtr.Zero)
+                {
+                    Console.Error.WriteLine($"Field {nameof(unmanagedInterface.GetTextFunctionPtr)} in struct {nameof(PlClrUnmanagedInterface)} must not be NULL");
+                    return IntPtr.Zero;
+                }
 
                 var palloc = System.Runtime.InteropServices.Marshal.GetDelegateForFunctionPointer<PAllocDelegate>(unmanagedInterface.PAllocFunctionPtr);
                 var palloc0 = System.Runtime.InteropServices.Marshal.GetDelegateForFunctionPointer<PAllocDelegate>(unmanagedInterface.PAlloc0FunctionPtr);
                 var repalloc = System.Runtime.InteropServices.Marshal.GetDelegateForFunctionPointer<RePAllocDelegate>(unmanagedInterface.RePAllocFunctionPtr);
                 var pfree = System.Runtime.InteropServices.Marshal.GetDelegateForFunctionPointer<PFreeDelegate>(unmanagedInterface.PFreeFunctionPtr);
                 var elog = System.Runtime.InteropServices.Marshal.GetDelegateForFunctionPointer<ELogDelegate>(unmanagedInterface.ELogFunctionPtr);
+                var getString = System.Runtime.InteropServices.Marshal.GetDelegateForFunctionPointer<GetStringDelegate>(unmanagedInterface.GetTextFunctionPtr);
 
                 ServerMemory.Initialize(palloc, palloc0, repalloc, pfree);
                 ServerLog.Initialize(elog);
+                ServerFunctions.Initialize(getString);
 
                 PlClrManagedInterface managedInterface;
                 managedInterface.CompileFunctionPtr =
@@ -173,7 +181,7 @@ namespace PlClr
                 if (argLength < System.Runtime.InteropServices.Marshal.SizeOf(typeof(FunctionCompileInfoPrivate)))
                 {
                     ServerLog.ELog(SeverityLevel.Error,
-                        $"Argument {nameof(argLength)} is {argLength} but is expected to be greater than or equal to {System.Runtime.InteropServices.Marshal.SizeOf<PlClrUnmanagedInterface>()}");
+                        $"Argument {nameof(argLength)} is {argLength} but is expected to be greater than or equal to {System.Runtime.InteropServices.Marshal.SizeOf<FunctionCompileInfoPrivate>()}");
                     return IntPtr.Zero;
                 }
 
