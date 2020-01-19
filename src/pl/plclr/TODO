@@ -9,3 +9,4 @@ Next steps:
 - Implement returning composite types
 - Implement returning sets
 - Implement support for OUT and INOUT arguments
+- call hostfxr_close on planned backend shutdown
