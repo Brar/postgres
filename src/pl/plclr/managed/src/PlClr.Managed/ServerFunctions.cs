@@ -34,6 +34,6 @@ namespace PlClr
         public static long GetInt64(IntPtr datum) => (long) datum;
         public static IntPtr GetDatum(long value) => (IntPtr)value;
 
-        public static string GetString(IntPtr datum) => Marshal.PtrToStringPFree(_getStringDelegate!(datum))!;
+        public static string GetText(IntPtr datum) => Marshal.PtrToStringPFree(_getStringDelegate!(datum))!;
     }
 }
