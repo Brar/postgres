@@ -20,7 +20,7 @@ namespace PlClr
             var returnType = ServerTypes.GetTypeForOid(func.ReturnValueType);
             var returnTypeName = returnType == typeof(void) ? "void" : returnType.FullName;
             var builder = new StringBuilder()
-                .AppendLine("using PlClr;")
+                .AppendLine($"using {nameof(PlClr)};")
                 .AppendLine("using System;")
                 .AppendLine()
                 .Append("public static class ")
@@ -34,7 +34,7 @@ namespace PlClr
                 .AppendLine(
                     string.Join($"{Environment.NewLine}\t\t",
                         func.ArgumentOids.Select((oid, index) =>
-                            $"var {func.ArgumentNames?[index] ?? $"arg{index + 1}"} = values[{index}].IsNull ? ({ServerTypes.GetTypeForOid(oid).FullName}?)null : ServerFunction.{ServerTypes.GetValueAccessMethodForOid(oid)}(values[{index}].Value);")))
+                            $"var {func.ArgumentNames?[index] ?? $"arg{index + 1}"} = values[{index}].IsNull ? ({ServerTypes.GetTypeForOid(oid).FullName}?)null : {nameof(ServerFunctions)}.{ServerTypes.GetValueAccessMethodForOid(oid)}(values[{index}].Value);")))
                 .AppendLine()
                 .Append(returnType == typeof(void) ? $"\t\t{safeMethodName}(" : $"\t\tvar result = {safeMethodName}(")
                 .Append(
@@ -46,7 +46,11 @@ namespace PlClr
                 builder.AppendLine("\t\treturn IntPtr.Zero;");
             else
                 builder.Append(
-                        "\t\tif (result == null)\n\t\t{\n\t\t\treturn IntPtr.Zero;\n\t\t}\n\n\t\treturn ServerFunction.GetDatum((")
+                        "\t\tif (result == null)\n\t\t{\n\t\t\treturn IntPtr.Zero;\n\t\t}\n\n\t\treturn ")
+                    .Append(nameof(ServerFunctions))
+                    .Append('.')
+                    .Append(nameof(ServerFunctions.GetDatum))
+                    .Append("((")
                     .Append(returnType.FullName)
                     .AppendLine(")result);");
             builder.AppendLine("\t}")
@@ -71,7 +75,7 @@ namespace PlClr
             Debug.WriteLine($"PL/CLR generated code:\n{generatedCode}");
             var tree = CSharpSyntaxTree.ParseText(generatedCode);
 
-            var options = new CSharpCompilationOptions(OutputKind.DynamicallyLinkedLibrary);
+            var options = new CSharpCompilationOptions(OutputKind.DynamicallyLinkedLibrary, nullableContextOptions: NullableContextOptions.Enable);
 
             var assemblyPath = Path.GetDirectoryName(typeof(object).Assembly.Location)!;
             var mscorlib = MetadataReference.CreateFromFile(typeof(object).Assembly.Location);

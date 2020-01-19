@@ -10,3 +10,8 @@ select plclr_regress_simple();
 CREATE FUNCTION plclr_regress_add_integer(integer, integer) RETURNS int AS 'return arg1 + arg2;' LANGUAGE plclr;
 
 select plclr_regress_add_integer(21, 21);
+
+-- simple function counting characters in a text
+CREATE FUNCTION plclr_regress_count_characters(text) RETURNS int AS 'return arg1.Length;' LANGUAGE plclr;
+
+select plclr_regress_count_characters('123456789');
