@@ -6,7 +6,7 @@ namespace PlClr
     public static class Marshal
     {
 
-        public static string? PtrToStringPFree(IntPtr ptr)
+        public static string? ToStringPFree(IntPtr ptr)
         {
             if (ptr == IntPtr.Zero)
                 return null;
@@ -20,10 +20,30 @@ namespace PlClr
             return result;
         }
 
-        public static IntPtr StringToPtrPalloc(string? str)
+        public static IntPtr ToPtrPalloc(string? str)
             => StringToPtrPalloc(str, false);
 
-        public static unsafe IntPtr StringToPtrPalloc(string? str, bool toClrString)
+        public static IntPtr ToPtrPalloc(int? value)
+        {
+            if (!value.HasValue)
+                return IntPtr.Zero;
+
+            var ptr = ServerMemory.Palloc((ulong) System.Runtime.InteropServices.Marshal.SizeOf<int>());
+            System.Runtime.InteropServices.Marshal.WriteInt32(ptr, value.Value);
+            return ptr;
+        }
+
+        public static IntPtr ToPtrPalloc(uint? value)
+        {
+            if (!value.HasValue)
+                return IntPtr.Zero;
+
+            var ptr = ServerMemory.Palloc((ulong) System.Runtime.InteropServices.Marshal.SizeOf<uint>());
+            System.Runtime.InteropServices.Marshal.WriteInt32(ptr, unchecked((int)value.Value));
+            return ptr;
+        }
+
+        internal static unsafe IntPtr StringToPtrPalloc(string? str, bool toClrString)
         {
             if (str == null)
                 return IntPtr.Zero;
