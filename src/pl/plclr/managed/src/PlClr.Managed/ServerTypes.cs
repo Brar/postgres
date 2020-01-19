@@ -16,7 +16,7 @@ namespace PlClr
                 // 22 => typeof(int2vector), // int2vector
                 23 => nameof(ServerFunctions.GetInt32), // int4
                 // 24 => typeof(regproc), // regproc
-                25 => nameof(ServerFunctions.GetString), // text
+                25 => nameof(ServerFunctions.GetText), // text
                 // 26 => typeof(uint), // oid
                 // 27 => typeof(tid), // tid
                 // 28 => typeof(xid), // xid
