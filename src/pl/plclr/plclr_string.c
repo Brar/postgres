@@ -141,5 +141,7 @@ char* clr_char_to_server_encoding(clr_char* input)
 		if (output != utf8)
 			output_length = strlen(output);
 	}
+	output[output_length] = (char) 0;
+
 	return output;
 }

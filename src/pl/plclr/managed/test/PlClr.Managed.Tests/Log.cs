@@ -37,6 +37,18 @@ namespace PlClr.Managed.Tests
             _pFree(message);
         }
 
+        public void EReport(int level, IntPtr errorMessageInternal, IntPtr errorCode, IntPtr errorDetailInternal, IntPtr errorDetailLog, IntPtr errorHint, IntPtr errorPosition, IntPtr errorDataType)
+        {
+            // ToDo: save the messages that come in
+            _pFree(errorMessageInternal);
+            _pFree(errorCode);
+            _pFree(errorDetailInternal);
+            _pFree(errorDetailLog);
+            _pFree(errorHint);
+            _pFree(errorPosition);
+            _pFree(errorDataType);
+        }
+
         public string ConsoleOut
         {
             get
@@ -76,6 +88,14 @@ namespace PlClr.Managed.Tests
                 throw new ObjectDisposedException(nameof(Log));
 
             return System.Runtime.InteropServices.Marshal.GetFunctionPointerForDelegate<ELogDelegate>(Elog);
+        }
+
+        public IntPtr GetEReportFunctionPointer()
+        {
+            if (_disposed)
+                throw new ObjectDisposedException(nameof(Log));
+
+            return System.Runtime.InteropServices.Marshal.GetFunctionPointerForDelegate<EReportDelegate>(EReport);
         }
 
         public void Dispose()

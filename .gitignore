@@ -45,3 +45,5 @@ lib*.pc
 /Release/
 /tmp_install/
 /.vs
+src/backend/catalog/postgres.description
+src/backend/catalog/postgres.shdescription

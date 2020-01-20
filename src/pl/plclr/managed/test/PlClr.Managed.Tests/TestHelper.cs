@@ -11,6 +11,7 @@ namespace PlClr.Managed.Tests
         private bool _disposed;
         private readonly Log _log;
         private readonly MemoryContext _memoryContext;
+        private readonly Function _function;
         private readonly List<IntPtr> _unmanagedMemoryPointers = new List<IntPtr>();
         private readonly uint _functionOidDefault = (uint)Random.Next(100000000, 999999999);
         private readonly string _functionNameDefault = "TestFunction";
@@ -19,6 +20,7 @@ namespace PlClr.Managed.Tests
         {
             _memoryContext = new MemoryContext(memoryContextSize);
             _log = new Log(MemoryContext.PFree);
+            _function = new Function(MemoryContext.PAlloc);
         }
 
         public Log Log
@@ -43,6 +45,16 @@ namespace PlClr.Managed.Tests
             }
         }
 
+		public Function Function
+        {
+            get
+            {
+                if (_disposed)
+                    throw new ObjectDisposedException(nameof(TestHelper));
+
+                return _function;
+            }
+        }
         public uint FunctionOidDefault
         {
             get
@@ -65,14 +77,17 @@ namespace PlClr.Managed.Tests
             }
         }
 
-        public (IntPtr unmanagedInterfacePointer, int unmanagedInterfaceSize) GetUnmanagedInterface()
+
+		public (IntPtr unmanagedInterfacePointer, int unmanagedInterfaceSize) GetUnmanagedInterface()
         {
             PlClrUnmanagedInterface i;
             i.ELogFunctionPtr = Log.GetELogFunctionPointer();
+            i.EReportFunctionPtr = Log.GetEReportFunctionPointer();
             i.PFreeFunctionPtr = MemoryContext.GetPFreeFunctionPointer();
             i.PAlloc0FunctionPtr = MemoryContext.GetPAlloc0FunctionPointer();
             i.PAllocFunctionPtr = MemoryContext.GetPAllocFunctionPointer();
             i.RePAllocFunctionPtr = MemoryContext.GetRePAllocFunctionPointer();
+            i.GetTextFunctionPtr = Function.GetGetTextFunctionPointer();
             var unmanagedInterfaceSize = System.Runtime.InteropServices.Marshal.SizeOf<PlClrUnmanagedInterface>();
             var unmanagedInterfacePointer = System.Runtime.InteropServices.Marshal.AllocCoTaskMem(unmanagedInterfaceSize);
             _unmanagedMemoryPointers.Add(unmanagedInterfacePointer);

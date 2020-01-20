@@ -11,5 +11,7 @@ namespace PlClr.Managed.Tests
         public IntPtr RePAllocFunctionPtr;
         public IntPtr PFreeFunctionPtr;
         public IntPtr ELogFunctionPtr;
+        public IntPtr EReportFunctionPtr;
+        public IntPtr GetTextFunctionPtr;
     }
 }
