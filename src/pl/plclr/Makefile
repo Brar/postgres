@@ -45,7 +45,7 @@ REGRESS_OPTS = --dbname=$(PL_TESTDB)
 REGRESS = plclr_test
 
 include $(top_srcdir)/src/Makefile.shlib
-backend_src = $(top_srcdir)/src/backend
+common_src = $(top_srcdir)/src/common
 
 all: all-lib managed-lib
 
@@ -60,7 +60,7 @@ managed-lib:
 
 .PHONY: managed-lib
 
-encnames.c: % : $(backend_src)/utils/mb/%
+encnames.c: % : $(common_src)/%
 	rm -f $@ && $(LN_S) $< .
 
 

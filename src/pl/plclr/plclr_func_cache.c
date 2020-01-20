@@ -278,7 +278,7 @@ plclr_HashTableInit(void)
 	HASHCTL		ctl;
 
 	/* don't allow double-initialization */
-	Assert(plpgsql_HashTable == NULL);
+	Assert(plclr_HashTable == NULL);
 
 	memset(&ctl, 0, sizeof(ctl));
 	ctl.keysize = sizeof(PlClr_func_hashkey);
