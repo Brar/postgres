@@ -81,10 +81,12 @@ namespace PlClr.Managed.Tests
             using var h = new TestHelper();
             PlClrUnmanagedInterface i;
             i.ELogFunctionPtr = h.Log.GetELogFunctionPointer();
+            i.EReportFunctionPtr = h.Log.GetEReportFunctionPointer();
             i.PFreeFunctionPtr = h.MemoryContext.GetPFreeFunctionPointer();
             i.PAlloc0FunctionPtr = h.MemoryContext.GetPAlloc0FunctionPointer();
             i.PAllocFunctionPtr = IntPtr.Zero;
             i.RePAllocFunctionPtr = h.MemoryContext.GetRePAllocFunctionPointer();
+            i.GetTextFunctionPtr = h.Function.GetGetTextFunctionPointer();
             var unmanagedInterfaceSize = System.Runtime.InteropServices.Marshal.SizeOf<PlClrUnmanagedInterface>();
             var unmanagedInterfacePointer = h.AllocCoTaskMem(unmanagedInterfaceSize);
             System.Runtime.InteropServices.Marshal.StructureToPtr(i, unmanagedInterfacePointer, false);
@@ -108,10 +110,12 @@ namespace PlClr.Managed.Tests
             using var h = new TestHelper();
             PlClrUnmanagedInterface i;
             i.ELogFunctionPtr = h.Log.GetELogFunctionPointer();
+            i.EReportFunctionPtr = h.Log.GetEReportFunctionPointer();
             i.PFreeFunctionPtr = h.MemoryContext.GetPFreeFunctionPointer();
             i.PAlloc0FunctionPtr = IntPtr.Zero;
             i.PAllocFunctionPtr = h.MemoryContext.GetPAllocFunctionPointer();
             i.RePAllocFunctionPtr = h.MemoryContext.GetRePAllocFunctionPointer();
+            i.GetTextFunctionPtr = h.Function.GetGetTextFunctionPointer();
             var unmanagedInterfaceSize = System.Runtime.InteropServices.Marshal.SizeOf<PlClrUnmanagedInterface>();
             var unmanagedInterfacePointer = h.AllocCoTaskMem(unmanagedInterfaceSize);
             System.Runtime.InteropServices.Marshal.StructureToPtr(i, unmanagedInterfacePointer, false);
@@ -135,10 +139,12 @@ namespace PlClr.Managed.Tests
             using var h = new TestHelper();
             PlClrUnmanagedInterface i;
             i.ELogFunctionPtr = h.Log.GetELogFunctionPointer();
+            i.EReportFunctionPtr = h.Log.GetEReportFunctionPointer();
             i.PFreeFunctionPtr = h.MemoryContext.GetPFreeFunctionPointer();
             i.PAlloc0FunctionPtr = h.MemoryContext.GetPAllocFunctionPointer();
             i.PAllocFunctionPtr = h.MemoryContext.GetPAllocFunctionPointer();
             i.RePAllocFunctionPtr = IntPtr.Zero;
+            i.GetTextFunctionPtr = h.Function.GetGetTextFunctionPointer();
             var unmanagedInterfaceSize = System.Runtime.InteropServices.Marshal.SizeOf<PlClrUnmanagedInterface>();
             var unmanagedInterfacePointer = h.AllocCoTaskMem(unmanagedInterfaceSize);
             System.Runtime.InteropServices.Marshal.StructureToPtr(i, unmanagedInterfacePointer, false);
@@ -162,10 +168,12 @@ namespace PlClr.Managed.Tests
             using var h = new TestHelper();
             PlClrUnmanagedInterface i;
             i.ELogFunctionPtr = h.Log.GetELogFunctionPointer();
+            i.EReportFunctionPtr = h.Log.GetEReportFunctionPointer();
             i.PFreeFunctionPtr = IntPtr.Zero;
             i.PAlloc0FunctionPtr = h.MemoryContext.GetPAllocFunctionPointer();
             i.PAllocFunctionPtr = h.MemoryContext.GetPAllocFunctionPointer();
             i.RePAllocFunctionPtr = h.MemoryContext.GetRePAllocFunctionPointer();
+            i.GetTextFunctionPtr = h.Function.GetGetTextFunctionPointer();
             var unmanagedInterfaceSize = System.Runtime.InteropServices.Marshal.SizeOf<PlClrUnmanagedInterface>();
             var unmanagedInterfacePointer = h.AllocCoTaskMem(unmanagedInterfaceSize);
             System.Runtime.InteropServices.Marshal.StructureToPtr(i, unmanagedInterfacePointer, false);
@@ -189,10 +197,12 @@ namespace PlClr.Managed.Tests
             using var h = new TestHelper();
             PlClrUnmanagedInterface i;
             i.ELogFunctionPtr = IntPtr.Zero;
+            i.EReportFunctionPtr = h.Log.GetEReportFunctionPointer();
             i.PFreeFunctionPtr = h.MemoryContext.GetPFreeFunctionPointer();
             i.PAlloc0FunctionPtr = h.MemoryContext.GetPAllocFunctionPointer();
             i.PAllocFunctionPtr = h.MemoryContext.GetPAllocFunctionPointer();
             i.RePAllocFunctionPtr = h.MemoryContext.GetRePAllocFunctionPointer();
+            i.GetTextFunctionPtr = h.Function.GetGetTextFunctionPointer();
             var unmanagedInterfaceSize = System.Runtime.InteropServices.Marshal.SizeOf<PlClrUnmanagedInterface>();
             var unmanagedInterfacePointer = h.AllocCoTaskMem(unmanagedInterfaceSize);
             System.Runtime.InteropServices.Marshal.StructureToPtr(i, unmanagedInterfacePointer, false);
@@ -216,10 +226,12 @@ namespace PlClr.Managed.Tests
             using var h = new TestHelper();
             PlClrUnmanagedInterface i;
             i.ELogFunctionPtr = h.Log.GetELogFunctionPointer();
+            i.EReportFunctionPtr = h.Log.GetEReportFunctionPointer();
             i.PFreeFunctionPtr = h.MemoryContext.GetPFreeFunctionPointer();
             i.PAlloc0FunctionPtr = h.MemoryContext.GetPAlloc0FunctionPointer();
             i.PAllocFunctionPtr = h.MemoryContext.GetPAllocFunctionPointer(ThrowingPAlloc);
             i.RePAllocFunctionPtr = h.MemoryContext.GetRePAllocFunctionPointer();
+            i.GetTextFunctionPtr = h.Function.GetGetTextFunctionPointer();
             var unmanagedInterfaceSize = System.Runtime.InteropServices.Marshal.SizeOf<PlClrUnmanagedInterface>();
             var unmanagedInterfacePointer = h.AllocCoTaskMem(unmanagedInterfaceSize);
             System.Runtime.InteropServices.Marshal.StructureToPtr(i, unmanagedInterfacePointer, false);
@@ -250,11 +262,11 @@ namespace PlClr.Managed.Tests
             var resultPtr = PlClrMain.Compile(functionCompileInfoPointer, functionCompileInfoSize);
 
             Assert.NotEqual(IntPtr.Zero, resultPtr);
-            Assert.Equal(52UL, h.MemoryContext.TotalBytesPAlloc);
+            Assert.Equal(68UL, h.MemoryContext.TotalBytesPAlloc);
             Assert.Equal(0UL, h.MemoryContext.TotalBytesPAlloc0);
             Assert.Equal(0UL, h.MemoryContext.TotalBytesRePAlloc);
             Assert.Equal(0UL, h.MemoryContext.TotalBytesRePAllocFree);
-            Assert.Equal(44UL, h.MemoryContext.TotalBytesPFree); // resultPtr is on us now
+            Assert.Equal(60UL, h.MemoryContext.TotalBytesPFree); // resultPtr is on us now
             Assert.Empty(h.Log.ConsoleOut);
             Assert.Empty(h.Log.ConsoleError);
             Assert.Empty(h.Log.ELogMessages);
@@ -269,7 +281,7 @@ namespace PlClr.Managed.Tests
             var resultPtr = PlClrMain.Compile(IntPtr.Zero, functionCompileInfoSize);
 
             Assert.Equal(IntPtr.Zero, resultPtr);
-            Assert.Equal(135UL, h.MemoryContext.TotalBytesPAlloc);
+            Assert.Equal(151UL, h.MemoryContext.TotalBytesPAlloc);
             Assert.Equal(0UL, h.MemoryContext.TotalBytesPAlloc0);
             Assert.Equal(0UL, h.MemoryContext.TotalBytesRePAlloc);
             Assert.Equal(0UL, h.MemoryContext.TotalBytesRePAllocFree);
@@ -303,11 +315,11 @@ namespace PlClr.Managed.Tests
             var resultPtr = PlClrMain.Compile(functionCompileInfoPointer, functionCompileInfoSize);
 
             Assert.NotEqual(IntPtr.Zero, resultPtr);
-            Assert.Equal(200UL, h.MemoryContext.TotalBytesPAlloc);
+            Assert.Equal(286UL, h.MemoryContext.TotalBytesPAlloc);
             Assert.Equal(0UL, h.MemoryContext.TotalBytesPAlloc0);
             Assert.Equal(0UL, h.MemoryContext.TotalBytesRePAlloc);
             Assert.Equal(0UL, h.MemoryContext.TotalBytesRePAllocFree);
-            Assert.Equal(192UL, h.MemoryContext.TotalBytesPFree); // resultPtr is on us now
+            Assert.Equal(278UL, h.MemoryContext.TotalBytesPFree); // resultPtr is on us now
             Assert.Empty(h.Log.ConsoleOut);
             Assert.Empty(h.Log.ConsoleError);
             Assert.Empty(h.Log.ELogMessages);
