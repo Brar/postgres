@@ -16,8 +16,18 @@ namespace PlClr
     {
         public static FunctionCallDelegate Compile(FunctionCompileInfo func)
         {
+            var assemblyLoadContext = AssemblyLoadContext.GetLoadContext(typeof(CSharpCompiler).Assembly)!;
+            var assemblyName = $"PlClrAssembly_{func.FunctionOid}";
             var className = $"PlClrClass_{func.FunctionOid}";
             var safeMethodName = GetSafeFunctionName(func.FunctionName);
+            var assembly = assemblyLoadContext.Assemblies.FirstOrDefault(a => a.GetName().Name == assemblyName) ??
+                           CompileAssembly(func, assemblyLoadContext, assemblyName, className, safeMethodName);
+
+            return (FunctionCallDelegate)assembly.GetType(className)!.GetMethod($"Execute_{safeMethodName}")!.CreateDelegate(typeof(FunctionCallDelegate));
+        }
+
+        private static Assembly CompileAssembly(FunctionCompileInfo func, AssemblyLoadContext assemblyLoadContext, string assemblyName, string className, string safeMethodName)
+        {
             var returnType = ServerTypes.GetTypeForOid(func.ReturnValueType);
             var returnTypeName = returnType == typeof(void) ? "void" : returnType.FullName;
             var builder = new StringBuilder()
@@ -28,7 +38,9 @@ namespace PlClr
                 .Append("\n{\n")
                 .Append("\tpublic static IntPtr Execute_")
                 .Append(safeMethodName)
-                .Append("(NullableDatum[] values)\n")
+                .Append('(')
+                .Append(nameof(NullableDatum))
+                .Append("[] values)\n")
                 .Append("\t{\n");
 
             if (func.ArgumentOids.Any())
@@ -45,7 +57,7 @@ namespace PlClr
                 {
                     builder.AppendJoin($"\n\t\t",
                             func.ArgumentOids.Select((oid, index) =>
-                                $"var {func.ArgumentNames?[index] ?? $"arg{index + 1}"} = values[{index}].IsNull ? ({ServerTypes.GetTypeForOid(oid).FullName}?)null : {nameof(ServerFunctions)}.{ServerTypes.GetValueAccessMethodForOid(oid)}(values[{index}].Value);"));
+                                $"var {func.ArgumentNames?[index] ?? $"arg{index + 1}"} = values[{index}].{nameof(NullableDatum.IsNull)} ? ({ServerTypes.GetTypeForOid(oid).FullName}?)null : {nameof(ServerFunctions)}.{ServerTypes.GetValueAccessMethodForOid(oid)}(values[{index}].{nameof(NullableDatum.Value)});"));
                 }
                 builder.Append("\n\n");
             }
@@ -53,27 +65,68 @@ namespace PlClr
                 .AppendJoin(", ",
                         func.ArgumentOids.Select((oid, index) =>
                             func.ArgumentNames?[index] ?? $"arg{index + 1}"))
-                .Append(");\n");
+                .Append(");\n\t\t")
+                .Append(nameof(NullableDatum))
+                .Append(" returnValue;\n\t\t");
             if (returnType == typeof(void))
-                builder.Append("\t\treturn IntPtr.Zero;\n");
+            {
+                builder.Append("returnValue.")
+                    .Append(nameof(NullableDatum.IsNull))
+                    .Append(" = false;\n\t\t")
+                    .Append("returnValue.")
+                    .Append(nameof(NullableDatum.Value))
+                    .Append(" = IntPtr.Zero;\n\n\t\t")
+                    .Append("return ")
+                    .Append(nameof(Marshal))
+                    .Append('.')
+                    .Append(nameof(Marshal.StructureToPtrPalloc))
+                    .Append("(returnValue);\n");
+            }
             else
             {
                 if (!func.IsStrict)
-                    builder.Append("\t\tif (result == null)\n")
+                    builder.Append("if (result == null)\n")
                         .Append("\t\t{\n")
-                        .Append("\t\t\treturn IntPtr.Zero;\n")
+                        .Append("\t\t\treturnValue.")
+                        .Append(nameof(NullableDatum.IsNull))
+                        .Append(" = true;\n")
+                        .Append("\t\t\treturnValue.")
+                        .Append(nameof(NullableDatum.Value))
+                        .Append(" = IntPtr.Zero;\n")
+                        .Append("\t\t}\n")
+                        .Append("\t\telse\n")
+                        .Append("\t\t{\n")
+                        .Append("\t\t\treturnValue.")
+                        .Append(nameof(NullableDatum.IsNull))
+                        .Append(" = false;\n")
+                        .Append("\t\t\treturnValue.")
+                        .Append(nameof(NullableDatum.Value))
+                        .Append(" = ")
+                        .Append(nameof(ServerFunctions))
+                        .Append('.')
+                        .Append(nameof(ServerFunctions.GetDatum))
+                        .Append("((")
+                        .Append(returnType.FullName)
+                        .Append(")result);\n")
                         .Append("\t\t}\n\n");
+                else
+                    builder.Append("returnValue.")
+                        .Append(nameof(NullableDatum.IsNull))
+                        .Append(" = false;\n\t\t")
+                        .Append("returnValue.")
+                        .Append(nameof(NullableDatum.Value))
+                        .Append(" = ")
+                        .Append(nameof(ServerFunctions))
+                        .Append('.')
+                        .Append(nameof(ServerFunctions.GetDatum))
+                        .Append("(result);\n\n");
+
                 builder.Append(
                         "\t\treturn ")
-                    .Append(nameof(ServerFunctions))
+                    .Append(nameof(Marshal))
                     .Append('.')
-                    .Append(nameof(ServerFunctions.GetDatum))
-                    .Append('(');
-                if (!func.IsStrict)
-                    builder.Append("(")
-                    .Append(returnType.FullName)
-                    .Append(")");
-                builder.Append("result);\n");
+                    .Append(nameof(Marshal.StructureToPtrPalloc))
+                    .Append("(returnValue);\n");
             }
             builder.Append("\t}\n\n")
                 .Append("\tprivate static ")
@@ -107,7 +160,7 @@ namespace PlClr
             var system = MetadataReference.CreateFromFile(typeof(Console).Assembly.Location);
             var systemRuntime = MetadataReference.CreateFromFile(Path.Combine(assemblyPath, "System.Runtime.dll"));
             var plclr = MetadataReference.CreateFromFile(typeof(PlClrMain).Assembly.Location);
-            var compilation = CSharpCompilation.Create($"PlClrAssembly_{func.FunctionOid}",
+            var compilation = CSharpCompilation.Create(assemblyName,
                 syntaxTrees: new[] { tree }, references: new[] { mscorlib, system, systemRuntime, plclr },
                 options: options);
 
@@ -134,8 +187,7 @@ namespace PlClr
                     .OrderBy(d => d.Location.IsInSource ? d.Location.SourceSpan.Start : int.MaxValue))
                     ServerLog.EReport(GetSeverityLevel(resultDiagnostic.Severity), errorMessageInternal: resultDiagnostic.ToString());
 
-                var assembly = AssemblyLoadContext.GetLoadContext(typeof(CSharpCompiler).Assembly)!.LoadFromStream(ms);
-                return (FunctionCallDelegate)assembly.GetType(className)!.GetMethod($"Execute_{safeMethodName}")!.CreateDelegate(typeof(FunctionCallDelegate));
+                return assemblyLoadContext.LoadFromStream(ms);
             }
 
             static string GetDiagnostics(EmitResult result, DiagnosticSeverity level)

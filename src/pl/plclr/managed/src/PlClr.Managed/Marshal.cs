@@ -5,6 +5,8 @@ namespace PlClr
 {
     public static class Marshal
     {
+        public static ulong SizeOf<T>()
+            => (ulong)System.Runtime.InteropServices.Marshal.SizeOf<T>();
 
         public static string? ToStringPFree(IntPtr ptr)
         {
@@ -28,7 +30,7 @@ namespace PlClr
             if (!value.HasValue)
                 return IntPtr.Zero;
 
-            var ptr = ServerMemory.Palloc((ulong) System.Runtime.InteropServices.Marshal.SizeOf<int>());
+            var ptr = ServerMemory.Palloc(SizeOf<int>());
             System.Runtime.InteropServices.Marshal.WriteInt32(ptr, value.Value);
             return ptr;
         }
@@ -38,8 +40,15 @@ namespace PlClr
             if (!value.HasValue)
                 return IntPtr.Zero;
 
-            var ptr = ServerMemory.Palloc((ulong) System.Runtime.InteropServices.Marshal.SizeOf<uint>());
+            var ptr = ServerMemory.Palloc(SizeOf<uint>());
             System.Runtime.InteropServices.Marshal.WriteInt32(ptr, unchecked((int)value.Value));
+            return ptr;
+        }
+
+        public static IntPtr StructureToPtrPalloc<T>(T value) where T : struct
+        {
+            var ptr = ServerMemory.Palloc(SizeOf<T>());
+            System.Runtime.InteropServices.Marshal.StructureToPtr(value, ptr, false);
             return ptr;
         }
 
