@@ -1,6 +1,5 @@
 Next steps:
 
-- Implement returning NULL from PL/CLR functions
 - Implement returning TEXT from PL/CLR functions
 - Implement composite type arguments
 - Generate better compiler errors, warnings and infos using ereport

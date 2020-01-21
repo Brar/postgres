@@ -8,8 +8,8 @@ typedef struct PlClrFunctionCompileInfo
     const clr_char* FunctionName;
     const clr_char* FunctionBody;
 	Oid ReturnValueType;
-	bool ReturnsSet;
-	bool IsStrict;
+	BOOL ReturnsSet;
+	BOOL IsStrict;
 	int NumberOfArguments;
 	void* ArgumentTypes;
 	void* ArgumentNames;

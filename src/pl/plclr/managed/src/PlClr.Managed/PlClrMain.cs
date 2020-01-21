@@ -48,7 +48,9 @@ namespace PlClr
             public IntPtr FunctionNamePtr;
             public IntPtr FunctionBodyPtr;
             public uint ReturnValueType;
+            [MarshalAs(UnmanagedType.Bool)]
             public bool ReturnsSet;
+            [MarshalAs(UnmanagedType.Bool)]
             public bool IsStrict;
             public int NumberOfArguments;
             public IntPtr ArgumentTypes;

@@ -7,11 +7,14 @@ CREATE FUNCTION plclr_regress_simple() RETURNS void AS '/* 😇 */' LANGUAGE plc
 select plclr_regress_simple();
 
 -- simple function adding two integer values
-CREATE FUNCTION plclr_regress_add_integer(integer, integer) RETURNS int AS 'return arg1 + arg2;' LANGUAGE plclr;
+CREATE FUNCTION plclr_regress_add_integer(integer, integer) RETURNS int AS 'if (arg1 == null || arg2 == null) return null; return arg1 + arg2;' LANGUAGE plclr;
 
 select plclr_regress_add_integer(21, 21);
+select plclr_regress_add_integer(NULL, 21);
+select plclr_regress_add_integer(21, NULL);
 
--- simple function counting characters in a text
-CREATE FUNCTION plclr_regress_count_characters(text) RETURNS int AS 'return arg1.Length;' LANGUAGE plclr;
+-- strict function counting characters in a text
+CREATE FUNCTION plclr_regress_count_characters(text) RETURNS int AS 'return arg1.Length;' STRICT LANGUAGE plclr;
 
 select plclr_regress_count_characters('123456789');
+select plclr_regress_count_characters(NULL);
