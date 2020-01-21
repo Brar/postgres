@@ -129,6 +129,7 @@ plclr_compile_function(FunctionCallInfo fcinfo, HeapTuple procTup, PlClr_functio
 			procStruct = (Form_pg_proc) GETSTRUCT(procTup);
 		    compileInfo.ReturnValueType = procStruct->prorettype;
 		    compileInfo.ReturnsSet = procStruct->proretset;
+			compileInfo.IsStrict = procStruct->proisstrict;
 		    compileInfo.FunctionName = server_encoding_to_clr_char(plclr_funcname);
 		    compileInfo.FunctionBody = server_encoding_to_clr_char(proc_source);
 

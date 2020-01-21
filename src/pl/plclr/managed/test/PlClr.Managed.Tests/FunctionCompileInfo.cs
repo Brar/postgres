@@ -13,6 +13,7 @@ namespace PlClr.Managed.Tests
         public IntPtr FunctionBodyPtr;
         public uint ReturnValueType;
         public bool ReturnsSet;
+        public bool IsStrict;
         public int NumberOfArguments;
         public IntPtr ArgumentTypes;
         public IntPtr ArgumentNames;

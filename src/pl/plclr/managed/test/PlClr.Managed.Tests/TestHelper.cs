@@ -95,7 +95,7 @@ namespace PlClr.Managed.Tests
             return (unmanagedInterfacePointer, unmanagedInterfaceSize);
         }
 
-        public (IntPtr functionCompileInfoPointer, int functionCompileInfoSize) GetFunctionCompileInfo(uint? oid = null, string? name = null, Argument[]? arguments = null, string? body = null, TypeOid returnValueType = TypeOid.Void, bool returnsSet = false)
+        public (IntPtr functionCompileInfoPointer, int functionCompileInfoSize) GetFunctionCompileInfo(uint? oid = null, string? name = null, Argument[]? arguments = null, string? body = null, TypeOid returnValueType = TypeOid.Void, bool returnsSet = false, bool isStrict = false)
         {
             var (unmanagedInterfacePointer, unmanagedInterfaceSize) = GetUnmanagedInterface();
             var managedInterfacePointer = PlClrMain.Setup(unmanagedInterfacePointer, unmanagedInterfaceSize);
@@ -120,6 +120,7 @@ namespace PlClr.Managed.Tests
             }
             functionCompileInfo.ReturnValueType = (uint)returnValueType;
             functionCompileInfo.ReturnsSet = returnsSet;
+            functionCompileInfo.IsStrict = isStrict;
 
             var functionCompileInfoSize = System.Runtime.InteropServices.Marshal.SizeOf<FunctionCompileInfo>();
             var functionCompileInfoPointer = System.Runtime.InteropServices.Marshal.AllocCoTaskMem(functionCompileInfoSize);
