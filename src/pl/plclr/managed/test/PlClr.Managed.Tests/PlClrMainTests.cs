@@ -27,11 +27,6 @@ namespace PlClr.Managed.Tests
                 System.Runtime.InteropServices.Marshal.GetDelegateForFunctionPointer<PlClrMainDelegate>(managedInterface
                     .ExecuteFunctionPtr);
             Assert.Equal(PlClrMain.Execute, executeFunctionDelegate);
-            Assert.Equal(16UL, h.MemoryContext.TotalBytesPAlloc);
-            Assert.Equal(0UL, h.MemoryContext.TotalBytesPAlloc0);
-            Assert.Equal(0UL, h.MemoryContext.TotalBytesRePAlloc);
-            Assert.Equal(0UL, h.MemoryContext.TotalBytesRePAllocFree);
-            Assert.Equal(0UL, h.MemoryContext.TotalBytesPFree); // resultPtr is on us now
             Assert.Empty(h.Log.ConsoleOut);
             Assert.Empty(h.Log.ConsoleError);
             Assert.Empty(h.Log.ELogMessages);
@@ -46,11 +41,6 @@ namespace PlClr.Managed.Tests
             var resultPtr = PlClrMain.Setup(IntPtr.Zero, unmanagedInterfaceSize);
 
             Assert.Equal(IntPtr.Zero, resultPtr);
-            Assert.Equal(0UL, h.MemoryContext.TotalBytesPAlloc);
-            Assert.Equal(0UL, h.MemoryContext.TotalBytesPAlloc0);
-            Assert.Equal(0UL, h.MemoryContext.TotalBytesRePAlloc);
-            Assert.Equal(0UL, h.MemoryContext.TotalBytesRePAllocFree);
-            Assert.Equal(0UL, h.MemoryContext.TotalBytesPFree);
             Assert.Empty(h.Log.ConsoleOut);
             Assert.Equal($"Argument arg must not be NULL{Environment.NewLine}", h.Log.ConsoleError);
             Assert.Empty(h.Log.ELogMessages);
@@ -65,11 +55,6 @@ namespace PlClr.Managed.Tests
             var resultPtr = PlClrMain.Setup(unmanagedInterfacePointer, 0);
 
             Assert.Equal(IntPtr.Zero, resultPtr);
-            Assert.Equal(0UL, h.MemoryContext.TotalBytesPAlloc);
-            Assert.Equal(0UL, h.MemoryContext.TotalBytesPAlloc0);
-            Assert.Equal(0UL, h.MemoryContext.TotalBytesRePAlloc);
-            Assert.Equal(0UL, h.MemoryContext.TotalBytesRePAllocFree);
-            Assert.Equal(0UL, h.MemoryContext.TotalBytesPFree);
             Assert.Empty(h.Log.ConsoleOut);
             Assert.Equal($"Argument argLength is 0 but is expected to be greater than or equal to {unmanagedInterfaceSize}{Environment.NewLine}", h.Log.ConsoleError);
             Assert.Empty(h.Log.ELogMessages);
@@ -94,11 +79,6 @@ namespace PlClr.Managed.Tests
             var resultPtr = PlClrMain.Setup(unmanagedInterfacePointer, unmanagedInterfaceSize);
 
             Assert.Equal(IntPtr.Zero, resultPtr);
-            Assert.Equal(0UL, h.MemoryContext.TotalBytesPAlloc);
-            Assert.Equal(0UL, h.MemoryContext.TotalBytesPAlloc0);
-            Assert.Equal(0UL, h.MemoryContext.TotalBytesRePAlloc);
-            Assert.Equal(0UL, h.MemoryContext.TotalBytesRePAllocFree);
-            Assert.Equal(0UL, h.MemoryContext.TotalBytesPFree);
             Assert.Empty(h.Log.ConsoleOut);
             Assert.Equal($"Field PAllocFunctionPtr in struct PlClrUnmanagedInterface must not be NULL{Environment.NewLine}", h.Log.ConsoleError);
             Assert.Empty(h.Log.ELogMessages);
@@ -123,11 +103,6 @@ namespace PlClr.Managed.Tests
             var resultPtr = PlClrMain.Setup(unmanagedInterfacePointer, unmanagedInterfaceSize);
 
             Assert.Equal(IntPtr.Zero, resultPtr);
-            Assert.Equal(0UL, h.MemoryContext.TotalBytesPAlloc);
-            Assert.Equal(0UL, h.MemoryContext.TotalBytesPAlloc0);
-            Assert.Equal(0UL, h.MemoryContext.TotalBytesRePAlloc);
-            Assert.Equal(0UL, h.MemoryContext.TotalBytesRePAllocFree);
-            Assert.Equal(0UL, h.MemoryContext.TotalBytesPFree);
             Assert.Empty(h.Log.ConsoleOut);
             Assert.Equal($"Field PAlloc0FunctionPtr in struct PlClrUnmanagedInterface must not be NULL{Environment.NewLine}", h.Log.ConsoleError);
             Assert.Empty(h.Log.ELogMessages);
@@ -152,11 +127,6 @@ namespace PlClr.Managed.Tests
             var resultPtr = PlClrMain.Setup(unmanagedInterfacePointer, unmanagedInterfaceSize);
 
             Assert.Equal(IntPtr.Zero, resultPtr);
-            Assert.Equal(0UL, h.MemoryContext.TotalBytesPAlloc);
-            Assert.Equal(0UL, h.MemoryContext.TotalBytesPAlloc0);
-            Assert.Equal(0UL, h.MemoryContext.TotalBytesRePAlloc);
-            Assert.Equal(0UL, h.MemoryContext.TotalBytesRePAllocFree);
-            Assert.Equal(0UL, h.MemoryContext.TotalBytesPFree);
             Assert.Empty(h.Log.ConsoleOut);
             Assert.Equal($"Field RePAllocFunctionPtr in struct PlClrUnmanagedInterface must not be NULL{Environment.NewLine}", h.Log.ConsoleError);
             Assert.Empty(h.Log.ELogMessages);
@@ -181,11 +151,6 @@ namespace PlClr.Managed.Tests
             var resultPtr = PlClrMain.Setup(unmanagedInterfacePointer, unmanagedInterfaceSize);
 
             Assert.Equal(IntPtr.Zero, resultPtr);
-            Assert.Equal(0UL, h.MemoryContext.TotalBytesPAlloc);
-            Assert.Equal(0UL, h.MemoryContext.TotalBytesPAlloc0);
-            Assert.Equal(0UL, h.MemoryContext.TotalBytesRePAlloc);
-            Assert.Equal(0UL, h.MemoryContext.TotalBytesRePAllocFree);
-            Assert.Equal(0UL, h.MemoryContext.TotalBytesPFree);
             Assert.Empty(h.Log.ConsoleOut);
             Assert.Equal($"Field PFreeFunctionPtr in struct PlClrUnmanagedInterface must not be NULL{Environment.NewLine}", h.Log.ConsoleError);
             Assert.Empty(h.Log.ELogMessages);
@@ -210,11 +175,6 @@ namespace PlClr.Managed.Tests
             var resultPtr = PlClrMain.Setup(unmanagedInterfacePointer, unmanagedInterfaceSize);
 
             Assert.Equal(IntPtr.Zero, resultPtr);
-            Assert.Equal(0UL, h.MemoryContext.TotalBytesPAlloc);
-            Assert.Equal(0UL, h.MemoryContext.TotalBytesPAlloc0);
-            Assert.Equal(0UL, h.MemoryContext.TotalBytesRePAlloc);
-            Assert.Equal(0UL, h.MemoryContext.TotalBytesRePAllocFree);
-            Assert.Equal(0UL, h.MemoryContext.TotalBytesPFree);
             Assert.Empty(h.Log.ConsoleOut);
             Assert.Equal($"Field ELogFunctionPtr in struct PlClrUnmanagedInterface must not be NULL{Environment.NewLine}", h.Log.ConsoleError);
             Assert.Empty(h.Log.ELogMessages);
@@ -239,11 +199,6 @@ namespace PlClr.Managed.Tests
             var resultPtr = PlClrMain.Setup(unmanagedInterfacePointer, unmanagedInterfaceSize);
 
             Assert.Equal(IntPtr.Zero, resultPtr);
-            Assert.Equal(0UL, h.MemoryContext.TotalBytesPAlloc);
-            Assert.Equal(0UL, h.MemoryContext.TotalBytesPAlloc0);
-            Assert.Equal(0UL, h.MemoryContext.TotalBytesRePAlloc);
-            Assert.Equal(0UL, h.MemoryContext.TotalBytesRePAllocFree);
-            Assert.Equal(0UL, h.MemoryContext.TotalBytesPFree);
             Assert.Empty(h.Log.ConsoleOut);
             Assert.StartsWith(
                 $"An unexpected exception occured during PL/CLR setup: System.InvalidOperationException: This is a Test!",
@@ -262,11 +217,6 @@ namespace PlClr.Managed.Tests
             var resultPtr = PlClrMain.Compile(functionCompileInfoPointer, functionCompileInfoSize);
 
             Assert.NotEqual(IntPtr.Zero, resultPtr);
-            Assert.Equal(52UL, h.MemoryContext.TotalBytesPAlloc);
-            Assert.Equal(0UL, h.MemoryContext.TotalBytesPAlloc0);
-            Assert.Equal(0UL, h.MemoryContext.TotalBytesRePAlloc);
-            Assert.Equal(0UL, h.MemoryContext.TotalBytesRePAllocFree);
-            Assert.Equal(44UL, h.MemoryContext.TotalBytesPFree); // resultPtr is on us now
             Assert.Empty(h.Log.ConsoleOut);
             Assert.Empty(h.Log.ConsoleError);
             Assert.Empty(h.Log.ELogMessages);
@@ -281,11 +231,6 @@ namespace PlClr.Managed.Tests
             var resultPtr = PlClrMain.Compile(IntPtr.Zero, functionCompileInfoSize);
 
             Assert.Equal(IntPtr.Zero, resultPtr);
-            Assert.Equal(135UL, h.MemoryContext.TotalBytesPAlloc);
-            Assert.Equal(0UL, h.MemoryContext.TotalBytesPAlloc0);
-            Assert.Equal(0UL, h.MemoryContext.TotalBytesRePAlloc);
-            Assert.Equal(0UL, h.MemoryContext.TotalBytesRePAllocFree);
-            Assert.Equal(107UL, h.MemoryContext.TotalBytesPFree);
             Assert.Empty(h.Log.ConsoleOut);
             Assert.Empty(h.Log.ConsoleError);
             Assert.Collection(h.Log.ELogMessages,
@@ -315,11 +260,6 @@ namespace PlClr.Managed.Tests
             var resultPtr = PlClrMain.Compile(functionCompileInfoPointer, functionCompileInfoSize);
 
             Assert.NotEqual(IntPtr.Zero, resultPtr);
-            Assert.Equal(200UL, h.MemoryContext.TotalBytesPAlloc);
-            Assert.Equal(0UL, h.MemoryContext.TotalBytesPAlloc0);
-            Assert.Equal(0UL, h.MemoryContext.TotalBytesRePAlloc);
-            Assert.Equal(0UL, h.MemoryContext.TotalBytesRePAllocFree);
-            Assert.Equal(192UL, h.MemoryContext.TotalBytesPFree); // resultPtr is on us now
             Assert.Empty(h.Log.ConsoleOut);
             Assert.Empty(h.Log.ConsoleError);
             Assert.Empty(h.Log.ELogMessages);
@@ -344,11 +284,6 @@ namespace PlClr.Managed.Tests
             var resultPtr = PlClrMain.Compile(functionCompileInfoPointer, functionCompileInfoSize);
 
             Assert.NotEqual(IntPtr.Zero, resultPtr);
-            Assert.Equal(102UL, h.MemoryContext.TotalBytesPAlloc);
-            Assert.Equal(0UL, h.MemoryContext.TotalBytesPAlloc0);
-            Assert.Equal(0UL, h.MemoryContext.TotalBytesRePAlloc);
-            Assert.Equal(0UL, h.MemoryContext.TotalBytesRePAllocFree);
-            Assert.Equal(94UL, h.MemoryContext.TotalBytesPFree); // resultPtr is on us now
             Assert.Empty(h.Log.ConsoleOut);
             Assert.Empty(h.Log.ConsoleError);
             Assert.Empty(h.Log.ELogMessages);
@@ -372,11 +307,6 @@ namespace PlClr.Managed.Tests
             var resultPtr = PlClrMain.Compile(functionCompileInfoPointer, functionCompileInfoSize);
 
             Assert.NotEqual(IntPtr.Zero, resultPtr);
-            Assert.Equal(254UL, h.MemoryContext.TotalBytesPAlloc);
-            Assert.Equal(0UL, h.MemoryContext.TotalBytesPAlloc0);
-            Assert.Equal(0UL, h.MemoryContext.TotalBytesRePAlloc);
-            Assert.Equal(0UL, h.MemoryContext.TotalBytesRePAllocFree);
-            Assert.Equal(246UL, h.MemoryContext.TotalBytesPFree); // resultPtr is on us now
             Assert.Empty(h.Log.ConsoleOut);
             Assert.Empty(h.Log.ConsoleError);
             Assert.Empty(h.Log.ELogMessages);
