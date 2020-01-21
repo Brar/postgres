@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Text;
+using Microsoft.VisualStudio.TestPlatform.CommunicationUtilities;
 using Xunit;
 
 namespace PlClr.Managed.Tests
@@ -219,7 +220,28 @@ namespace PlClr.Managed.Tests
             Assert.NotEqual(IntPtr.Zero, resultPtr);
             Assert.Empty(h.Log.ConsoleOut);
             Assert.Empty(h.Log.ConsoleError);
-            Assert.Empty(h.Log.ELogMessages);
+            Assert.Collection(h.Log.ELogMessages,
+                entry =>
+                {
+                    Assert.Equal(SeverityLevel.Debug1, entry.Item1);
+                    Assert.Equal(@"PL/CLR generated code:
+using PlClr;
+using System;
+
+public static class PlClrClass_" + h.FunctionOidDefault + @"
+{
+	public static IntPtr Execute_TestFunction(NullableDatum[] values)
+	{
+		TestFunction();
+		return IntPtr.Zero;
+	}
+
+	private static void TestFunction()
+	{
+	}
+}
+", entry.Item2);
+                });
         }
 
         [Fact]
@@ -262,7 +284,40 @@ namespace PlClr.Managed.Tests
             Assert.NotEqual(IntPtr.Zero, resultPtr);
             Assert.Empty(h.Log.ConsoleOut);
             Assert.Empty(h.Log.ConsoleError);
-            Assert.Empty(h.Log.ELogMessages);
+            Assert.Collection(h.Log.ELogMessages,
+                entry =>
+                {
+                    Assert.Equal(SeverityLevel.Debug1, entry.Item1);
+                    Assert.Equal(@"PL/CLR generated code:
+using PlClr;
+using System;
+
+public static class PlClrClass_" + h.FunctionOidDefault + @"
+{
+	public static IntPtr Execute_AddTwoIntegers(NullableDatum[] values)
+	{
+		var arg1 = values[0].IsNull ? (System.Int32?)null : ServerFunctions.GetInt32(values[0].Value);
+		var arg2 = values[1].IsNull ? (System.Int32?)null : ServerFunctions.GetInt32(values[1].Value);
+
+		var result = AddTwoIntegers(arg1, arg2);
+		if (result == null)
+		{
+			return IntPtr.Zero;
+		}
+
+		return ServerFunctions.GetDatum((System.Int32)result);
+	}
+
+	private static System.Int32? AddTwoIntegers(System.Int32? arg1, System.Int32? arg2)
+	{
+if (arg1 == null || arg2 == null)
+	return null;
+
+return arg1 + arg2;
+	}
+}
+", entry.Item2);
+                });
         }
 
         [Fact]
@@ -286,7 +341,32 @@ namespace PlClr.Managed.Tests
             Assert.NotEqual(IntPtr.Zero, resultPtr);
             Assert.Empty(h.Log.ConsoleOut);
             Assert.Empty(h.Log.ConsoleError);
-            Assert.Empty(h.Log.ELogMessages);
+            Assert.Collection(h.Log.ELogMessages,
+                entry =>
+                {
+                    Assert.Equal(SeverityLevel.Debug1, entry.Item1);
+                    Assert.Equal(@"PL/CLR generated code:
+using PlClr;
+using System;
+
+public static class PlClrClass_" + h.FunctionOidDefault + @"
+{
+	public static IntPtr Execute_AddTwoIntegers(NullableDatum[] values)
+	{
+		var arg1 = ServerFunctions.GetInt32(values[0].Value);
+		var arg2 = ServerFunctions.GetInt32(values[1].Value);
+
+		var result = AddTwoIntegers(arg1, arg2);
+		return ServerFunctions.GetDatum(result);
+	}
+
+	private static System.Int32 AddTwoIntegers(System.Int32 arg1, System.Int32 arg2)
+	{
+return arg1 + arg2;
+	}
+}
+", entry.Item2);
+                });
         }
 
         [Fact]
@@ -309,7 +389,40 @@ namespace PlClr.Managed.Tests
             Assert.NotEqual(IntPtr.Zero, resultPtr);
             Assert.Empty(h.Log.ConsoleOut);
             Assert.Empty(h.Log.ConsoleError);
-            Assert.Empty(h.Log.ELogMessages);
+            Assert.Collection(h.Log.ELogMessages,
+                entry =>
+                {
+                    Assert.Equal(SeverityLevel.Debug1, entry.Item1);
+                    Assert.Equal(@"PL/CLR generated code:
+using PlClr;
+using System;
+
+public static class PlClrClass_" + h.FunctionOidDefault + @"
+{
+	public static IntPtr Execute_AddTwoIntegers(NullableDatum[] values)
+	{
+		var first = values[0].IsNull ? (System.Int32?)null : ServerFunctions.GetInt32(values[0].Value);
+		var second = values[1].IsNull ? (System.Int32?)null : ServerFunctions.GetInt32(values[1].Value);
+
+		var result = AddTwoIntegers(first, second);
+		if (result == null)
+		{
+			return IntPtr.Zero;
+		}
+
+		return ServerFunctions.GetDatum((System.Int32)result);
+	}
+
+	private static System.Int32? AddTwoIntegers(System.Int32? first, System.Int32? second)
+	{
+if (first == null || second == null)
+	return null;
+
+return first + second;
+	}
+}
+", entry.Item2);
+                });
         }
 
     }
