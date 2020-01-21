@@ -9,11 +9,16 @@ Datum
 plclr_exec_function(PlClr_function *func, FunctionCallInfo fcinfo, bool atomic)
 {
 	PlClrFunctionCallInfo callInfo;
+	NullableDatum* result;
+
 	callInfo.NumberOfArguments = fcinfo->nargs;
 	callInfo.ArgumentValues = fcinfo->args;
 	callInfo.ExecuteDelegatePtr = func->action;
-	
-	return (Datum)plclrManagedInterface->ExecutePtr(&callInfo, sizeof(PlClrFunctionCallInfo));
+
+	result = plclrManagedInterface->ExecutePtr(&callInfo, sizeof(PlClrFunctionCallInfo));
+
+	fcinfo->isnull = result->isnull;
+	return (Datum)result->value;
 }
 
 

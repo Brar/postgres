@@ -233,7 +233,11 @@ public static class PlClrClass_" + h.FunctionOidDefault + @"
 	public static IntPtr Execute_TestFunction(NullableDatum[] values)
 	{
 		TestFunction();
-		return IntPtr.Zero;
+		NullableDatum returnValue;
+		returnValue.IsNull = false;
+		returnValue.Value = IntPtr.Zero;
+
+		return Marshal.StructureToPtrPalloc(returnValue);
 	}
 
 	private static void TestFunction()
@@ -300,12 +304,19 @@ public static class PlClrClass_" + h.FunctionOidDefault + @"
 		var arg2 = values[1].IsNull ? (System.Int32?)null : ServerFunctions.GetInt32(values[1].Value);
 
 		var result = AddTwoIntegers(arg1, arg2);
+		NullableDatum returnValue;
 		if (result == null)
 		{
-			return IntPtr.Zero;
+			returnValue.IsNull = true;
+			returnValue.Value = IntPtr.Zero;
+		}
+		else
+		{
+			returnValue.IsNull = false;
+			returnValue.Value = ServerFunctions.GetDatum((System.Int32)result);
 		}
 
-		return ServerFunctions.GetDatum((System.Int32)result);
+		return Marshal.StructureToPtrPalloc(returnValue);
 	}
 
 	private static System.Int32? AddTwoIntegers(System.Int32? arg1, System.Int32? arg2)
@@ -357,7 +368,11 @@ public static class PlClrClass_" + h.FunctionOidDefault + @"
 		var arg2 = ServerFunctions.GetInt32(values[1].Value);
 
 		var result = AddTwoIntegers(arg1, arg2);
-		return ServerFunctions.GetDatum(result);
+		NullableDatum returnValue;
+		returnValue.IsNull = false;
+		returnValue.Value = ServerFunctions.GetDatum(result);
+
+		return Marshal.StructureToPtrPalloc(returnValue);
 	}
 
 	private static System.Int32 AddTwoIntegers(System.Int32 arg1, System.Int32 arg2)
@@ -405,12 +420,19 @@ public static class PlClrClass_" + h.FunctionOidDefault + @"
 		var second = values[1].IsNull ? (System.Int32?)null : ServerFunctions.GetInt32(values[1].Value);
 
 		var result = AddTwoIntegers(first, second);
+		NullableDatum returnValue;
 		if (result == null)
 		{
-			return IntPtr.Zero;
+			returnValue.IsNull = true;
+			returnValue.Value = IntPtr.Zero;
+		}
+		else
+		{
+			returnValue.IsNull = false;
+			returnValue.Value = ServerFunctions.GetDatum((System.Int32)result);
 		}
 
-		return ServerFunctions.GetDatum((System.Int32)result);
+		return Marshal.StructureToPtrPalloc(returnValue);
 	}
 
 	private static System.Int32? AddTwoIntegers(System.Int32? first, System.Int32? second)
