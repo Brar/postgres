@@ -273,7 +273,7 @@ sub mkvcbuild
 		my $plclr = $solution->AddProject('plclr', 'dll', 'PLs', 'src/pl/plclr');
 		$plclr->AddIncludeDir($clr_nethostdir);
 		$plclr->AddLibrary($clr_nethostdir . "nethost.lib");
-		$plclr->AddReference($postgres);
+		$plclr->AddReference($postgres, $libpgcommon, $libpgport);
 		$solution->AddProjectDependency($plclr, $plclrManagedTests)
 
 		# This doens't currently work due to a .NET framework mismatch
