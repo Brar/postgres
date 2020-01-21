@@ -9,6 +9,7 @@ typedef struct PlClrFunctionCompileInfo
     const clr_char* FunctionBody;
 	Oid ReturnValueType;
 	bool ReturnsSet;
+	bool IsStrict;
 	int NumberOfArguments;
 	void* ArgumentTypes;
 	void* ArgumentNames;

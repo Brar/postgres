@@ -49,6 +49,7 @@ namespace PlClr
             public IntPtr FunctionBodyPtr;
             public uint ReturnValueType;
             public bool ReturnsSet;
+            public bool IsStrict;
             public int NumberOfArguments;
             public IntPtr ArgumentTypes;
             public IntPtr ArgumentNames;
@@ -231,7 +232,7 @@ namespace PlClr
                     var nArgs = ci.NumberOfArguments;
 
                     if (nArgs == 0)
-                        return new FunctionCompileInfo(ci.FunctionOid, functionName, functionBody, ci.ReturnValueType, ci.ReturnsSet);
+                        return new FunctionCompileInfo(ci.FunctionOid, functionName, functionBody, ci.ReturnValueType, ci.ReturnsSet, ci.IsStrict);
 
                     if (ci.ArgumentTypes == IntPtr.Zero)
                     {
@@ -266,7 +267,7 @@ namespace PlClr
                         ServerMemory.PFree(ci.ArgumentModes);
                     }
 
-                    return new FunctionCompileInfo(ci.FunctionOid, functionName, functionBody, ci.ReturnValueType, ci.ReturnsSet, nArgs, argTypes, argNames,
+                    return new FunctionCompileInfo(ci.FunctionOid, functionName, functionBody, ci.ReturnValueType, ci.ReturnsSet, ci.IsStrict, nArgs, argTypes, argNames,
                         argModes);
                 }
             }

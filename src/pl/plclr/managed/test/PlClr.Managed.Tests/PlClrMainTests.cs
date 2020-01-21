@@ -262,11 +262,11 @@ namespace PlClr.Managed.Tests
             var resultPtr = PlClrMain.Compile(functionCompileInfoPointer, functionCompileInfoSize);
 
             Assert.NotEqual(IntPtr.Zero, resultPtr);
-            Assert.Equal(68UL, h.MemoryContext.TotalBytesPAlloc);
+            Assert.Equal(52UL, h.MemoryContext.TotalBytesPAlloc);
             Assert.Equal(0UL, h.MemoryContext.TotalBytesPAlloc0);
             Assert.Equal(0UL, h.MemoryContext.TotalBytesRePAlloc);
             Assert.Equal(0UL, h.MemoryContext.TotalBytesRePAllocFree);
-            Assert.Equal(60UL, h.MemoryContext.TotalBytesPFree); // resultPtr is on us now
+            Assert.Equal(44UL, h.MemoryContext.TotalBytesPFree); // resultPtr is on us now
             Assert.Empty(h.Log.ConsoleOut);
             Assert.Empty(h.Log.ConsoleError);
             Assert.Empty(h.Log.ELogMessages);
@@ -281,7 +281,7 @@ namespace PlClr.Managed.Tests
             var resultPtr = PlClrMain.Compile(IntPtr.Zero, functionCompileInfoSize);
 
             Assert.Equal(IntPtr.Zero, resultPtr);
-            Assert.Equal(151UL, h.MemoryContext.TotalBytesPAlloc);
+            Assert.Equal(135UL, h.MemoryContext.TotalBytesPAlloc);
             Assert.Equal(0UL, h.MemoryContext.TotalBytesPAlloc0);
             Assert.Equal(0UL, h.MemoryContext.TotalBytesRePAlloc);
             Assert.Equal(0UL, h.MemoryContext.TotalBytesRePAllocFree);
@@ -315,11 +315,68 @@ namespace PlClr.Managed.Tests
             var resultPtr = PlClrMain.Compile(functionCompileInfoPointer, functionCompileInfoSize);
 
             Assert.NotEqual(IntPtr.Zero, resultPtr);
-            Assert.Equal(286UL, h.MemoryContext.TotalBytesPAlloc);
+            Assert.Equal(200UL, h.MemoryContext.TotalBytesPAlloc);
             Assert.Equal(0UL, h.MemoryContext.TotalBytesPAlloc0);
             Assert.Equal(0UL, h.MemoryContext.TotalBytesRePAlloc);
             Assert.Equal(0UL, h.MemoryContext.TotalBytesRePAllocFree);
-            Assert.Equal(278UL, h.MemoryContext.TotalBytesPFree); // resultPtr is on us now
+            Assert.Equal(192UL, h.MemoryContext.TotalBytesPFree); // resultPtr is on us now
+            Assert.Empty(h.Log.ConsoleOut);
+            Assert.Empty(h.Log.ConsoleError);
+            Assert.Empty(h.Log.ELogMessages);
+        }
+
+        [Fact]
+        public void CompileInt32InArgsWithoutNameStrictSuccess()
+        {
+            using var h = new TestHelper();
+            var (functionCompileInfoPointer, functionCompileInfoSize) = h.GetFunctionCompileInfo(
+                name: "AddTwoIntegers",
+                arguments: new []
+                {
+                    new Argument(TypeOid.Int32),
+                    new Argument(TypeOid.Int32)
+                },
+                body:"return arg1 + arg2;",
+                returnValueType: TypeOid.Int32,
+                isStrict: true
+            );
+
+            var resultPtr = PlClrMain.Compile(functionCompileInfoPointer, functionCompileInfoSize);
+
+            Assert.NotEqual(IntPtr.Zero, resultPtr);
+            Assert.Equal(102UL, h.MemoryContext.TotalBytesPAlloc);
+            Assert.Equal(0UL, h.MemoryContext.TotalBytesPAlloc0);
+            Assert.Equal(0UL, h.MemoryContext.TotalBytesRePAlloc);
+            Assert.Equal(0UL, h.MemoryContext.TotalBytesRePAllocFree);
+            Assert.Equal(94UL, h.MemoryContext.TotalBytesPFree); // resultPtr is on us now
+            Assert.Empty(h.Log.ConsoleOut);
+            Assert.Empty(h.Log.ConsoleError);
+            Assert.Empty(h.Log.ELogMessages);
+        }
+
+        [Fact]
+        public void CompileInt32InArgsWithNameSuccess()
+        {
+            using var h = new TestHelper();
+            var (functionCompileInfoPointer, functionCompileInfoSize) = h.GetFunctionCompileInfo(
+                name: "AddTwoIntegers",
+                arguments: new []
+                {
+                    new Argument(TypeOid.Int32, "first"),
+                    new Argument(TypeOid.Int32, "second")
+                },
+                body:"if (first == null || second == null)\n\treturn null;\n\nreturn first + second;",
+                returnValueType: TypeOid.Int32
+            );
+
+            var resultPtr = PlClrMain.Compile(functionCompileInfoPointer, functionCompileInfoSize);
+
+            Assert.NotEqual(IntPtr.Zero, resultPtr);
+            Assert.Equal(254UL, h.MemoryContext.TotalBytesPAlloc);
+            Assert.Equal(0UL, h.MemoryContext.TotalBytesPAlloc0);
+            Assert.Equal(0UL, h.MemoryContext.TotalBytesRePAlloc);
+            Assert.Equal(0UL, h.MemoryContext.TotalBytesRePAllocFree);
+            Assert.Equal(246UL, h.MemoryContext.TotalBytesPFree); // resultPtr is on us now
             Assert.Empty(h.Log.ConsoleOut);
             Assert.Empty(h.Log.ConsoleError);
             Assert.Empty(h.Log.ELogMessages);
