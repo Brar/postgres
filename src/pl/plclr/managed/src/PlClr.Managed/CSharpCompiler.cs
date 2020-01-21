@@ -28,14 +28,26 @@ namespace PlClr
                 .AppendLine("{")
                 .Append("\tpublic static IntPtr Execute_")
                 .Append(safeMethodName)
-                .Append("(NullableDatum[] values)")
+                .AppendLine("(NullableDatum[] values)")
                 .AppendLine("\t{")
-                .Append("\t\t")
-                .AppendLine(
+                .Append("\t\t");
+
+            if (func.IsStrict)
+            {
+                builder.AppendJoin($"{Environment.NewLine}\t\t",
+                    func.ArgumentOids.Select((oid, index) =>
+                    $"var {func.ArgumentNames?[index] ?? $"arg{index + 1}"} = {nameof(ServerFunctions)}.{ServerTypes.GetValueAccessMethodForOid(oid)}(values[{index}].Value);"
+                    ));
+            }
+            else
+            {
+                builder.AppendLine(
                     string.Join($"{Environment.NewLine}\t\t",
                         func.ArgumentOids.Select((oid, index) =>
-                            $"var {func.ArgumentNames?[index] ?? $"arg{index + 1}"} = values[{index}].IsNull ? ({ServerTypes.GetTypeForOid(oid).FullName}?)null : {nameof(ServerFunctions)}.{ServerTypes.GetValueAccessMethodForOid(oid)}(values[{index}].Value);")))
-                .AppendLine()
+                            $"var {func.ArgumentNames?[index] ?? $"arg{index + 1}"} = values[{index}].IsNull ? ({ServerTypes.GetTypeForOid(oid).FullName}?)null : {nameof(ServerFunctions)}.{ServerTypes.GetValueAccessMethodForOid(oid)}(values[{index}].Value);")));
+            }
+
+            builder.AppendLine()
                 .Append(returnType == typeof(void) ? $"\t\t{safeMethodName}(" : $"\t\tvar result = {safeMethodName}(")
                 .Append(
                     string.Join(", ",
@@ -45,25 +57,30 @@ namespace PlClr
             if (returnType == typeof(void))
                 builder.AppendLine("\t\treturn IntPtr.Zero;");
             else
+            {
+                if (!func.IsStrict)
+                    builder.Append(
+                            "\t\tif (result == null)\n\t\t{\n\t\t\treturn IntPtr.Zero;\n\t\t}\n\n");
                 builder.Append(
-                        "\t\tif (result == null)\n\t\t{\n\t\t\treturn IntPtr.Zero;\n\t\t}\n\n\t\treturn ")
+                        "\t\treturn ")
                     .Append(nameof(ServerFunctions))
                     .Append('.')
                     .Append(nameof(ServerFunctions.GetDatum))
                     .Append("((")
                     .Append(returnType.FullName)
                     .AppendLine(")result);");
+            }
             builder.AppendLine("\t}")
                 .AppendLine()
                 .Append("\tprivate static ")
                 .Append(returnTypeName)
-                .Append(returnType == typeof(void) ? " " : "? ")
+                .Append(returnType == typeof(void) || func.IsStrict ? " " : "? ")
                 .Append(safeMethodName)
                 .Append("(")
                 .Append(
                     string.Join(", ",
                         func.ArgumentOids.Select((oid, index) =>
-                            $"{ServerTypes.GetTypeForOid(oid).FullName}? {func.ArgumentNames?[index] ?? $"arg{index + 1}"}")))
+                            $"{ServerTypes.GetTypeForOid(oid).FullName}{(func.IsStrict ? string.Empty : "?")} {func.ArgumentNames?[index] ?? $"arg{index + 1}"}")))
                 .AppendLine(")")
                 .AppendLine("\t{")
                 .Append("\t\t")
