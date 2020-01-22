@@ -32,6 +32,7 @@ namespace PlClr
             public IntPtr ELogFunctionPtr;
             public IntPtr EReportFunctionPtr;
             public IntPtr GetTextFunctionPtr;
+            public IntPtr SetTextFunctionPtr;
         }
 
         [StructLayout(LayoutKind.Sequential)]
@@ -117,32 +118,37 @@ namespace PlClr
 
                 if (unmanagedInterface.PAllocFunctionPtr == IntPtr.Zero)
                 {
-                    Console.Error.WriteLine($"Field {nameof(unmanagedInterface.PAllocFunctionPtr)} in struct {nameof(PlClrUnmanagedInterface)} must not be NULL");
+                    Console.Error.WriteLine($"Field {nameof(PlClrUnmanagedInterface.PAllocFunctionPtr)} in struct {nameof(PlClrUnmanagedInterface)} must not be NULL");
                     return IntPtr.Zero;
                 }
                 if (unmanagedInterface.PAlloc0FunctionPtr == IntPtr.Zero)
                 {
-                    Console.Error.WriteLine($"Field {nameof(unmanagedInterface.PAlloc0FunctionPtr)} in struct {nameof(PlClrUnmanagedInterface)} must not be NULL");
+                    Console.Error.WriteLine($"Field {nameof(PlClrUnmanagedInterface.PAlloc0FunctionPtr)} in struct {nameof(PlClrUnmanagedInterface)} must not be NULL");
                     return IntPtr.Zero;
                 }
                 if (unmanagedInterface.RePAllocFunctionPtr == IntPtr.Zero)
                 {
-                    Console.Error.WriteLine($"Field {nameof(unmanagedInterface.RePAllocFunctionPtr)} in struct {nameof(PlClrUnmanagedInterface)} must not be NULL");
+                    Console.Error.WriteLine($"Field {nameof(PlClrUnmanagedInterface.RePAllocFunctionPtr)} in struct {nameof(PlClrUnmanagedInterface)} must not be NULL");
                     return IntPtr.Zero;
                 }
                 if (unmanagedInterface.PFreeFunctionPtr == IntPtr.Zero)
                 {
-                    Console.Error.WriteLine($"Field {nameof(unmanagedInterface.PFreeFunctionPtr)} in struct {nameof(PlClrUnmanagedInterface)} must not be NULL");
+                    Console.Error.WriteLine($"Field {nameof(PlClrUnmanagedInterface.PFreeFunctionPtr)} in struct {nameof(PlClrUnmanagedInterface)} must not be NULL");
                     return IntPtr.Zero;
                 }
                 if (unmanagedInterface.ELogFunctionPtr == IntPtr.Zero)
                 {
-                    Console.Error.WriteLine($"Field {nameof(unmanagedInterface.ELogFunctionPtr)} in struct {nameof(PlClrUnmanagedInterface)} must not be NULL");
+                    Console.Error.WriteLine($"Field {nameof(PlClrUnmanagedInterface.ELogFunctionPtr)} in struct {nameof(PlClrUnmanagedInterface)} must not be NULL");
                     return IntPtr.Zero;
                 }
                 if (unmanagedInterface.GetTextFunctionPtr == IntPtr.Zero)
                 {
-                    Console.Error.WriteLine($"Field {nameof(unmanagedInterface.GetTextFunctionPtr)} in struct {nameof(PlClrUnmanagedInterface)} must not be NULL");
+                    Console.Error.WriteLine($"Field {nameof(PlClrUnmanagedInterface.GetTextFunctionPtr)} in struct {nameof(PlClrUnmanagedInterface)} must not be NULL");
+                    return IntPtr.Zero;
+                }
+                if (unmanagedInterface.SetTextFunctionPtr == IntPtr.Zero)
+                {
+                    Console.Error.WriteLine($"Field {nameof(PlClrUnmanagedInterface.SetTextFunctionPtr)} in struct {nameof(PlClrUnmanagedInterface)} must not be NULL");
                     return IntPtr.Zero;
                 }
 
@@ -152,11 +158,12 @@ namespace PlClr
                 var pfree = System.Runtime.InteropServices.Marshal.GetDelegateForFunctionPointer<PFreeDelegate>(unmanagedInterface.PFreeFunctionPtr);
                 var elog = System.Runtime.InteropServices.Marshal.GetDelegateForFunctionPointer<ELogDelegate>(unmanagedInterface.ELogFunctionPtr);
                 var ereport = System.Runtime.InteropServices.Marshal.GetDelegateForFunctionPointer<EReportDelegate>(unmanagedInterface.EReportFunctionPtr);
-                var getString = System.Runtime.InteropServices.Marshal.GetDelegateForFunctionPointer<GetStringDelegate>(unmanagedInterface.GetTextFunctionPtr);
+                var getText = System.Runtime.InteropServices.Marshal.GetDelegateForFunctionPointer<ReferenceTypeConversionDelegate>(unmanagedInterface.GetTextFunctionPtr);
+                var setText = System.Runtime.InteropServices.Marshal.GetDelegateForFunctionPointer<ReferenceTypeConversionDelegate>(unmanagedInterface.SetTextFunctionPtr);
 
                 ServerMemory.Initialize(palloc, palloc0, repalloc, pfree);
                 ServerLog.Initialize(elog, ereport);
-                ServerFunctions.Initialize(getString);
+                ServerFunctions.Initialize(getText, setText);
 
                 PlClrManagedInterface managedInterface;
                 managedInterface.CompileFunctionPtr =

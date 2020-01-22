@@ -104,7 +104,7 @@ namespace PlClr
                         .Append(" = ")
                         .Append(nameof(ServerFunctions))
                         .Append('.')
-                        .Append(nameof(ServerFunctions.GetDatum))
+                        .Append(ServerTypes.GetValueCreationMethodForOid(func.ReturnValueType))
                         .Append("((")
                         .Append(returnType.FullName)
                         .Append(")result);\n")
@@ -118,7 +118,7 @@ namespace PlClr
                         .Append(" = ")
                         .Append(nameof(ServerFunctions))
                         .Append('.')
-                        .Append(nameof(ServerFunctions.GetDatum))
+                        .Append(ServerTypes.GetValueCreationMethodForOid(func.ReturnValueType))
                         .Append("(result);\n\n");
 
                 builder.Append(

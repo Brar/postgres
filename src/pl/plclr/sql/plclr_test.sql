@@ -18,3 +18,8 @@ CREATE FUNCTION plclr_regress_count_characters(text) RETURNS int AS 'return arg1
 
 select plclr_regress_count_characters('123456789');
 select plclr_regress_count_characters(NULL);
+
+-- strict function concatenating two text values
+CREATE FUNCTION plclr_regress_concat_text(text, text) RETURNS text AS 'return arg1 + arg2;' STRICT LANGUAGE plclr;
+
+select plclr_regress_concat_text('The answer is 4', '2!');
