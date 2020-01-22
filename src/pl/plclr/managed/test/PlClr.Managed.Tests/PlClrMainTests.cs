@@ -73,6 +73,7 @@ namespace PlClr.Managed.Tests
             i.PAllocFunctionPtr = IntPtr.Zero;
             i.RePAllocFunctionPtr = h.MemoryContext.GetRePAllocFunctionPointer();
             i.GetTextFunctionPtr = h.Function.GetGetTextFunctionPointer();
+            i.SetTextFunctionPtr = h.Function.GetSetTextFunctionPointer();
             var unmanagedInterfaceSize = System.Runtime.InteropServices.Marshal.SizeOf<PlClrUnmanagedInterface>();
             var unmanagedInterfacePointer = h.AllocCoTaskMem(unmanagedInterfaceSize);
             System.Runtime.InteropServices.Marshal.StructureToPtr(i, unmanagedInterfacePointer, false);
@@ -97,6 +98,7 @@ namespace PlClr.Managed.Tests
             i.PAllocFunctionPtr = h.MemoryContext.GetPAllocFunctionPointer();
             i.RePAllocFunctionPtr = h.MemoryContext.GetRePAllocFunctionPointer();
             i.GetTextFunctionPtr = h.Function.GetGetTextFunctionPointer();
+            i.SetTextFunctionPtr = h.Function.GetSetTextFunctionPointer();
             var unmanagedInterfaceSize = System.Runtime.InteropServices.Marshal.SizeOf<PlClrUnmanagedInterface>();
             var unmanagedInterfacePointer = h.AllocCoTaskMem(unmanagedInterfaceSize);
             System.Runtime.InteropServices.Marshal.StructureToPtr(i, unmanagedInterfacePointer, false);
@@ -121,6 +123,7 @@ namespace PlClr.Managed.Tests
             i.PAllocFunctionPtr = h.MemoryContext.GetPAllocFunctionPointer();
             i.RePAllocFunctionPtr = IntPtr.Zero;
             i.GetTextFunctionPtr = h.Function.GetGetTextFunctionPointer();
+            i.SetTextFunctionPtr = h.Function.GetSetTextFunctionPointer();
             var unmanagedInterfaceSize = System.Runtime.InteropServices.Marshal.SizeOf<PlClrUnmanagedInterface>();
             var unmanagedInterfacePointer = h.AllocCoTaskMem(unmanagedInterfaceSize);
             System.Runtime.InteropServices.Marshal.StructureToPtr(i, unmanagedInterfacePointer, false);
@@ -145,6 +148,7 @@ namespace PlClr.Managed.Tests
             i.PAllocFunctionPtr = h.MemoryContext.GetPAllocFunctionPointer();
             i.RePAllocFunctionPtr = h.MemoryContext.GetRePAllocFunctionPointer();
             i.GetTextFunctionPtr = h.Function.GetGetTextFunctionPointer();
+            i.SetTextFunctionPtr = h.Function.GetSetTextFunctionPointer();
             var unmanagedInterfaceSize = System.Runtime.InteropServices.Marshal.SizeOf<PlClrUnmanagedInterface>();
             var unmanagedInterfacePointer = h.AllocCoTaskMem(unmanagedInterfaceSize);
             System.Runtime.InteropServices.Marshal.StructureToPtr(i, unmanagedInterfacePointer, false);
@@ -169,6 +173,7 @@ namespace PlClr.Managed.Tests
             i.PAllocFunctionPtr = h.MemoryContext.GetPAllocFunctionPointer();
             i.RePAllocFunctionPtr = h.MemoryContext.GetRePAllocFunctionPointer();
             i.GetTextFunctionPtr = h.Function.GetGetTextFunctionPointer();
+            i.SetTextFunctionPtr = h.Function.GetSetTextFunctionPointer();
             var unmanagedInterfaceSize = System.Runtime.InteropServices.Marshal.SizeOf<PlClrUnmanagedInterface>();
             var unmanagedInterfacePointer = h.AllocCoTaskMem(unmanagedInterfaceSize);
             System.Runtime.InteropServices.Marshal.StructureToPtr(i, unmanagedInterfacePointer, false);
@@ -193,6 +198,7 @@ namespace PlClr.Managed.Tests
             i.PAllocFunctionPtr = h.MemoryContext.GetPAllocFunctionPointer(ThrowingPAlloc);
             i.RePAllocFunctionPtr = h.MemoryContext.GetRePAllocFunctionPointer();
             i.GetTextFunctionPtr = h.Function.GetGetTextFunctionPointer();
+            i.SetTextFunctionPtr = h.Function.GetSetTextFunctionPointer();
             var unmanagedInterfaceSize = System.Runtime.InteropServices.Marshal.SizeOf<PlClrUnmanagedInterface>();
             var unmanagedInterfacePointer = h.AllocCoTaskMem(unmanagedInterfaceSize);
             System.Runtime.InteropServices.Marshal.StructureToPtr(i, unmanagedInterfacePointer, false);

@@ -88,6 +88,7 @@ namespace PlClr.Managed.Tests
             i.PAllocFunctionPtr = MemoryContext.GetPAllocFunctionPointer();
             i.RePAllocFunctionPtr = MemoryContext.GetRePAllocFunctionPointer();
             i.GetTextFunctionPtr = Function.GetGetTextFunctionPointer();
+            i.SetTextFunctionPtr = Function.GetSetTextFunctionPointer();
             var unmanagedInterfaceSize = System.Runtime.InteropServices.Marshal.SizeOf<PlClrUnmanagedInterface>();
             var unmanagedInterfacePointer = System.Runtime.InteropServices.Marshal.AllocCoTaskMem(unmanagedInterfaceSize);
             _unmanagedMemoryPointers.Add(unmanagedInterfacePointer);
