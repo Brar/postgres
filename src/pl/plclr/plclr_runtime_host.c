@@ -2,6 +2,7 @@
 
 #include "miscadmin.h"
 #include "port.h"
+#include "mb/pg_wchar.h"
 #include "utils/builtins.h"
 
 #include "plclr_managed.h"
@@ -26,6 +27,7 @@ typedef struct PlClrUnmanagedInterface
     void (*ELogFunctionPtr)(int, const char*);
     void (*EReportFunctionPtr)(int, const char*, int*, const char*, const char*, const char*, int*, Oid*);
 	void* (*GetTextFunctionPtr)(Datum);
+	Datum (*SetTextFunctionPtr)(char*);
 } PlClrUnmanagedInterface, *PlClrUnmanagedInterfacePtr;
 
 typedef void* (CORECLR_DELEGATE_CALLTYPE *PlClrMainDelegate)(void *arg, int arg_size_in_bytes);
@@ -39,6 +41,7 @@ static void plclr_ereport(int elevel, const char* errmsg_internal_value, int* er
 	const char* errdetail_internal_value, const char* errdetail_log_value, const char* errhint_value,
 	int* errposition_value, Oid* errdatatype_value);
 static void* plclr_get_text(Datum);
+static Datum plclr_set_text(char* utf8String);
 
 /* Globals to hold managed exports */
 static hostfxr_close_fn hostfxr_close;
@@ -140,6 +143,7 @@ plclr_runtime_host_init(void)
 	setupInfo->PallocFunctionPtr = palloc;
 	setupInfo->RePallocFunctionPtr = repalloc;
 	setupInfo->GetTextFunctionPtr = plclr_get_text;
+	setupInfo->SetTextFunctionPtr = plclr_set_text;
 
 	plclrManagedInterface = PlClrMain_Setup(setupInfo, sizeof(PlClrUnmanagedInterface));
 
@@ -288,4 +292,26 @@ plclr_get_text(Datum arg)
 		pfree(server_encoded_text);
 
 	return (void*)clr_encoded_text;
+}
+
+static Datum
+plclr_set_text(char* utf8String)
+{
+	char* outputString;
+	text* outputText;
+	int dbEncoding = GetDatabaseEncoding();
+	size_t length = strlen(utf8String);
+
+	outputString = (char*) pg_do_encoding_conversion((unsigned char *) utf8String, length, PG_UTF8, dbEncoding);
+	if (outputString != utf8String)
+	{
+		pfree(utf8String);
+		outputString[length] = (char)0;
+		/* our new string might be even shorter than the UTF-8 encoded string */
+		length = strlen(outputString);
+	}
+	outputText = (text*) palloc(VARHDRSZ + length + 1);
+	SET_VARSIZE(outputText, VARHDRSZ + length + 1);
+	memcpy(outputText->vl_dat, outputString, length + 1);
+	return (Datum)outputText;
 }

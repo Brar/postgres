@@ -4,17 +4,20 @@ using System.Text;
 
 namespace PlClr
 {
-    public delegate IntPtr GetStringDelegate(IntPtr argPtr);
+    public delegate IntPtr ReferenceTypeConversionDelegate(IntPtr argPtr);
 
     public static class ServerFunctions
     {
-        private static GetStringDelegate? _getStringDelegate;
+        private static ReferenceTypeConversionDelegate? _getTextDelegate;
+        private static ReferenceTypeConversionDelegate? _setTextDelegate;
 
         internal static void Initialize(
-            GetStringDelegate getStringDelegate
+            ReferenceTypeConversionDelegate getTextDelegate,
+            ReferenceTypeConversionDelegate setTextDelegate
         )
         {
-            _getStringDelegate = getStringDelegate;
+            _getTextDelegate = getTextDelegate;
+            _setTextDelegate = setTextDelegate;
         }
 
         private static readonly IntPtr One = new IntPtr(1);
@@ -34,6 +37,7 @@ namespace PlClr
         public static long GetInt64(IntPtr datum) => (long) datum;
         public static IntPtr GetDatum(long value) => (IntPtr)value;
 
-        public static string GetText(IntPtr datum) => Marshal.ToStringPFree(_getStringDelegate!(datum))!;
+        public static string GetText(IntPtr datum) => Marshal.ToStringPFree(_getTextDelegate!(datum))!;
+        public static IntPtr TextGetDatum(string value) => _setTextDelegate!(Marshal.ToPtrPalloc(value));
     }
 }

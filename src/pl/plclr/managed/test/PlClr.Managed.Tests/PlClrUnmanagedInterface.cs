@@ -13,5 +13,6 @@ namespace PlClr.Managed.Tests
         public IntPtr ELogFunctionPtr;
         public IntPtr EReportFunctionPtr;
         public IntPtr GetTextFunctionPtr;
+        public IntPtr SetTextFunctionPtr;
     }
 }

@@ -10,14 +10,24 @@ namespace PlClr.Managed.Tests
 			_pAlloc = pAllocDelegate;
 		}
 
-		IntPtr GetText(IntPtr argPtr)
-		{
-			return IntPtr.Zero;
-		}
+        IntPtr GetText(IntPtr argPtr)
+        {
+            return IntPtr.Zero;
+        }
 
-		public IntPtr GetGetTextFunctionPointer()
-		{
-			return System.Runtime.InteropServices.Marshal.GetFunctionPointerForDelegate<GetStringDelegate>(GetText);
-		}
+        IntPtr SetText(IntPtr argPtr)
+        {
+            return IntPtr.Zero;
+        }
+
+        public IntPtr GetGetTextFunctionPointer()
+        {
+            return System.Runtime.InteropServices.Marshal.GetFunctionPointerForDelegate<ReferenceTypeConversionDelegate>(GetText);
+        }
+
+        public IntPtr GetSetTextFunctionPointer()
+        {
+            return System.Runtime.InteropServices.Marshal.GetFunctionPointerForDelegate<ReferenceTypeConversionDelegate>(SetText);
+        }
 	}
 }

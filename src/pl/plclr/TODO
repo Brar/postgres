@@ -1,12 +1,12 @@
 Next steps:
 
-- Implement returning TEXT from PL/CLR functions
 - Implement composite type arguments
-- Generate better compiler errors, warnings and infos using ereport
-- Add execute error callback
 - Implement returning composite types
 - Implement returning sets
 - Implement support for OUT and INOUT arguments
+- Create a SPI wrapper
+- Add execute error callback
+- Generate better compiler errors, warnings and infos using ereport
 - call hostfxr_close on planned backend shutdown
 - generate PostgreSqlErrorCode values from src/include/utils/errcodes.txt
 - Unload generated assemblies when recompiling (use AssemblyLoadContext?)
