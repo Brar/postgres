@@ -2,20 +2,38 @@
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.Emit;
 using System;
+using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Reflection;
 using System.Runtime.Loader;
 using System.Text;
-using System.Text.RegularExpressions;
+using static PlClr.Globals;
 
 namespace PlClr
 {
     internal static class CSharpCompiler
     {
+        private static readonly List<MetadataReference> MetadataReferences;
+
+        static CSharpCompiler()
+        {
+            var assemblyPath = Path.GetDirectoryName(typeof(object).Assembly.Location)!;
+            MetadataReferences = new List<MetadataReference>
+            {
+                MetadataReference.CreateFromFile(typeof(object).Assembly.Location),
+                MetadataReference.CreateFromFile(typeof(Console).Assembly.Location),
+                MetadataReference.CreateFromFile(Path.Combine(assemblyPath, "System.Runtime.dll")),
+                MetadataReference.CreateFromFile(typeof(PlClrMain).Assembly.Location)
+            };
+        }
+
         public static FunctionCallDelegate Compile(FunctionCompileInfo func)
         {
+            // We can't compile if PlClrMain did not complete Setup
+            Debug.Assert(BackendFunctions != null);
+
             var assemblyLoadContext = AssemblyLoadContext.GetLoadContext(typeof(CSharpCompiler).Assembly)!;
             var assemblyName = $"PlClrAssembly_{func.FunctionOid}";
             var className = $"PlClrClass_{func.FunctionOid}";
@@ -33,6 +51,7 @@ namespace PlClr
             var builder = new StringBuilder()
                 .Append($"using {nameof(PlClr)};\n")
                 .Append("using System;\n\n")
+                .Append("using static PlClr.Globals;\n\n")
                 .Append("public static class ")
                 .Append(className)
                 .Append("\n{\n")
@@ -50,14 +69,14 @@ namespace PlClr
                 {
                     builder.AppendJoin($"\n\t\t",
                         func.ArgumentOids.Select((oid, index) =>
-                        $"var {func.ArgumentNames?[index] ?? $"arg{index + 1}"} = {nameof(ServerFunctions)}.{ServerTypes.GetValueAccessMethodForOid(oid)}(values[{index}].Value);"
+                        $"var {func.ArgumentNames?[index] ?? $"arg{index + 1}"} = {nameof(BackendFunctions)}.{ServerTypes.GetValueAccessMethodForOid(oid)}(values[{index}].Value);"
                         ));
                 }
                 else
                 {
                     builder.AppendJoin($"\n\t\t",
                             func.ArgumentOids.Select((oid, index) =>
-                                $"var {func.ArgumentNames?[index] ?? $"arg{index + 1}"} = values[{index}].{nameof(NullableDatum.IsNull)} ? ({ServerTypes.GetTypeForOid(oid).FullName}?)null : {nameof(ServerFunctions)}.{ServerTypes.GetValueAccessMethodForOid(oid)}(values[{index}].{nameof(NullableDatum.Value)});"));
+                                $"var {func.ArgumentNames?[index] ?? $"arg{index + 1}"} = values[{index}].{nameof(NullableDatum.IsNull)} ? ({ServerTypes.GetTypeForOid(oid).FullName}?)null : {nameof(BackendFunctions)}.{ServerTypes.GetValueAccessMethodForOid(oid)}(values[{index}].{nameof(NullableDatum.Value)});"));
                 }
                 builder.Append("\n\n");
             }
@@ -102,7 +121,7 @@ namespace PlClr
                         .Append("\t\t\treturnValue.")
                         .Append(nameof(NullableDatum.Value))
                         .Append(" = ")
-                        .Append(nameof(ServerFunctions))
+                        .Append(nameof(BackendFunctions))
                         .Append('.')
                         .Append(ServerTypes.GetValueCreationMethodForOid(func.ReturnValueType))
                         .Append("((")
@@ -116,7 +135,7 @@ namespace PlClr
                         .Append("returnValue.")
                         .Append(nameof(NullableDatum.Value))
                         .Append(" = ")
-                        .Append(nameof(ServerFunctions))
+                        .Append(nameof(BackendFunctions))
                         .Append('.')
                         .Append(ServerTypes.GetValueCreationMethodForOid(func.ReturnValueType))
                         .Append("(result);\n\n");
@@ -150,18 +169,13 @@ namespace PlClr
                 .Append("}\n");
 
             var generatedCode = builder.ToString();
-            ServerLog.ELog(SeverityLevel.Debug1, $"PL/CLR generated code:\n{generatedCode}");
             var tree = CSharpSyntaxTree.ParseText(generatedCode);
+            ServerLog.ELog(SeverityLevel.Debug1, $"PL/CLR generated code:\n{tree}");
 
             var options = new CSharpCompilationOptions(OutputKind.DynamicallyLinkedLibrary, nullableContextOptions: NullableContextOptions.Enable);
 
-            var assemblyPath = Path.GetDirectoryName(typeof(object).Assembly.Location)!;
-            var mscorlib = MetadataReference.CreateFromFile(typeof(object).Assembly.Location);
-            var system = MetadataReference.CreateFromFile(typeof(Console).Assembly.Location);
-            var systemRuntime = MetadataReference.CreateFromFile(Path.Combine(assemblyPath, "System.Runtime.dll"));
-            var plclr = MetadataReference.CreateFromFile(typeof(PlClrMain).Assembly.Location);
             var compilation = CSharpCompilation.Create(assemblyName,
-                syntaxTrees: new[] { tree }, references: new[] { mscorlib, system, systemRuntime, plclr },
+                syntaxTrees: new[] { tree }, references: MetadataReferences,
                 options: options);
 
             var ms = new MemoryStream();
@@ -224,5 +238,51 @@ namespace PlClr
 
         private static string GetSafeFunctionName(string functionName)
             => new string(functionName.Take(1).Select(c => char.IsLetter(c) ? c : '_').Concat(functionName.Skip(1).Select(c => char.IsLetterOrDigit(c) ? c : '_')).ToArray());
+
+        public static string CreateValueAccessMethod(TypeInfo typeInfo)
+        {
+            if (typeInfo is CompositeTypeInfo compositeTypeInfo)
+            {
+                var assemblyName = $"PlClrAssembly_{typeInfo.Oid}";
+                var typeSyntaxTree = CSharpTypeGenerator.GetCompilationUnit(compositeTypeInfo, out string methodName).SyntaxTree;
+                
+                ServerLog.ELog(SeverityLevel.Debug1, $"PL/CLR generated code:\n{typeSyntaxTree}");
+
+                var options = new CSharpCompilationOptions(OutputKind.DynamicallyLinkedLibrary, nullableContextOptions: NullableContextOptions.Enable);
+
+                var compilation = CSharpCompilation.Create(assemblyName,
+                    syntaxTrees: new[] { typeSyntaxTree }, references: MetadataReferences,
+                    options: options);
+
+                var ms = new MemoryStream();
+                var res = compilation.Emit(ms);
+                ms.Seek(0L, SeekOrigin.Begin);
+                var ms2 = new MemoryStream(ms.ToArray());
+                ms2.Seek(0L, SeekOrigin.Begin);
+
+                if (res.Success)
+                {
+                    static SeverityLevel GetSeverityLevel(DiagnosticSeverity severity)
+                        => severity switch
+                        {
+                            DiagnosticSeverity.Hidden => SeverityLevel.Debug1,
+                            DiagnosticSeverity.Info => SeverityLevel.Info,
+                            DiagnosticSeverity.Warning => SeverityLevel.Warning,
+                            DiagnosticSeverity.Error => SeverityLevel.Error,
+                            _ => throw new ArgumentOutOfRangeException(nameof(severity), severity, null)
+                        };
+
+                    foreach (var resultDiagnostic in res.Diagnostics
+                        .Where(d => !d.IsSuppressed && d.Severity != DiagnosticSeverity.Hidden)
+                        .OrderBy(d => d.Location.IsInSource ? d.Location.SourceSpan.Start : int.MaxValue))
+                        ServerLog.EReport(GetSeverityLevel(resultDiagnostic.Severity), errorMessageInternal: resultDiagnostic.ToString());
+
+                    MetadataReferences.Add(MetadataReference.CreateFromStream(ms));
+                    AssemblyLoadContext.GetLoadContext(typeof(CSharpCompiler).Assembly)!.LoadFromStream(ms2);
+                    return methodName;
+                }
+            }
+            throw new NotImplementedException();
+        }
     }
 }
