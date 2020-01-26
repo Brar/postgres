@@ -1,6 +1,7 @@
 Next steps:
 
 - Implement composite type arguments
+- Generate syntax tree via SyntaxFactory
 - Implement returning composite types
 - Implement returning sets
 - Implement support for OUT and INOUT arguments
@@ -10,3 +11,4 @@ Next steps:
 - call hostfxr_close on planned backend shutdown
 - generate PostgreSqlErrorCode values from src/include/utils/errcodes.txt
 - Unload generated assemblies when recompiling (use AssemblyLoadContext?)
+- lock managed and unmanaged versions together

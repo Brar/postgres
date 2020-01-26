@@ -1,22 +1,28 @@
 ﻿using System;
+using System.Collections.Generic;
+using System.Diagnostics.CodeAnalysis;
+using static PlClr.Globals;
 
 namespace PlClr
 {
     public static class ServerTypes
     {
+        private static readonly Dictionary<uint, string> ValueAccessMethodCache = new Dictionary<uint, string>();
+        private static readonly Dictionary<uint, TypeInfo> KnownTypes = new Dictionary<uint, TypeInfo>();
+
         public static string GetValueAccessMethodForOid(uint oid)
             => oid switch
             {
-                16 => nameof(ServerFunctions.GetBool), // bool
+                16 => nameof(BackendFunctions.GetBool), // bool
                 // 17 => typeof(bytea), // bytea
                 // 18 => typeof(char), // char
                 // 19 => typeof(name), // name
-                20 => nameof(ServerFunctions.GetInt64), // int8
-                21 => nameof(ServerFunctions.GetInt16), // int2
+                20 => nameof(BackendFunctions.GetInt64), // int8
+                21 => nameof(BackendFunctions.GetInt16), // int2
                 // 22 => typeof(int2vector), // int2vector
-                23 => nameof(ServerFunctions.GetInt32), // int4
+                23 => nameof(BackendFunctions.GetInt32), // int4
                 // 24 => typeof(regproc), // regproc
-                25 => nameof(ServerFunctions.GetText), // text
+                25 => nameof(BackendFunctions.GetText), // text
                 // 26 => typeof(uint), // oid
                 // 27 => typeof(tid), // tid
                 // 28 => typeof(xid), // xid
@@ -171,11 +177,31 @@ namespace PlClr
                 // 4096 => typeof(regrole), // regrole
                 // 4097 => typeof(_regrole), // _regrole
                 // 5017 => typeof(pg_mcv_list), // pg_mcv_list
-                _ => throw ServerLog.EReport(
-                    SeverityLevel.Error,
-                    errorMessageInternal: $"The type with Oid {oid} is currently not supported by PL/CLR.",
-                    errorDataType: oid)!
+                _ => ValueAccessMethodCache.TryGetValue(oid, out var value)
+                    ? value
+                    : TryLookupValueAccessMethodForOid(oid, out value)
+                        ? value 
+                        : throw ServerLog.EReport(
+                            SeverityLevel.Error,
+                            $"The type with Oid {oid} is currently not supported by PL/CLR.",
+                            errorDataType: oid)!
     };
+
+        private static bool TryLookupValueAccessMethodForOid(uint oid, [NotNullWhen(true)] out string? value)
+        {
+            if (ValueAccessMethodCache.TryGetValue(oid, out value))
+                return true;
+
+            if (!KnownTypes.TryGetValue(oid, out var ti))
+            {
+                ti = BackendFunctions.GetTypeInfo(oid);
+                KnownTypes[oid] = ti;
+            }
+
+            value = CSharpCompiler.CreateValueAccessMethod(ti);
+            ValueAccessMethodCache[oid] = value;
+            return true;
+        }
 
         public static string GetValueCreationMethodForOid(uint oid)
             => oid switch

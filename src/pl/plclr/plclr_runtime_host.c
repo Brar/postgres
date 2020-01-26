@@ -2,8 +2,12 @@
 
 #include "miscadmin.h"
 #include "port.h"
+#include "catalog/pg_class.h"
+#include "catalog/pg_namespace.h"
+#include "catalog/pg_type.h"
 #include "mb/pg_wchar.h"
 #include "utils/builtins.h"
+#include "utils/syscache.h"
 
 #include "plclr_managed.h"
 #include "plclr_runtime_host.h"
@@ -17,20 +21,60 @@
 
 #include <dlfcn.h>
 #include <string.h>
+#include <nodes/extensible.h>
+
+typedef struct PlClrAttributeInfo
+{
+    clr_char* attname;
+    Oid atttypid;
+	int16 attnum;
+	unsigned char attnotnull; // bool
+} PlClrAttributeInfo, *PlClrAttributeInfoPtr;
+
+typedef struct PlClrClassInfo
+{
+	PlClrAttributeInfoPtr relattributes;
+    Oid oid;
+	int16 relnatts;
+} PlClrClassInfo, *PlClrClassInfoPtr;
+
+typedef struct PlClrTypeInfo
+{
+    clr_char* typname;
+    clr_char* nspname;
+	PlClrClassInfoPtr typclass;
+    Oid oid;
+	Oid typarray;
+	Oid typelem;
+	Oid typbasetype;
+	int typndims;
+	int16 typlen;
+	char typtype;
+	unsigned char typnotnull; // bool
+	unsigned char typbyval; // bool
+} PlClrTypeInfo, *PlClrTypeInfoPtr;
+
+typedef void* (CORECLR_DELEGATE_CALLTYPE *PlClrMainDelegate)(void *arg, int arg_size_in_bytes);
 
 typedef struct PlClrUnmanagedInterface
 {
+	/* palloc functions */
     void* (*PallocFunctionPtr)(Size);
     void* (*Palloc0FunctionPtr)(Size);
     void* (*RePallocFunctionPtr)(void*, Size);
     void (*PFreeFunctionPtr)(void*);
+	
+	/* logging functions */
     void (*ELogFunctionPtr)(int, const char*);
     void (*EReportFunctionPtr)(int, const char*, int*, const char*, const char*, const char*, int*, Oid*);
+	
+	/* type I/O */
+	PlClrTypeInfoPtr (*GetTypeInfoFunctionPtr)(Oid);
 	void* (*GetTextFunctionPtr)(Datum);
 	Datum (*SetTextFunctionPtr)(char*);
+	struct varlena* (*DeToastDatumFunctionPtr)(struct varlena* datum);
+	Datum (*GetAttributeByNumFunctionPtr)(HeapTupleHeader datum, int16 attNo, bool* isNull);
 } PlClrUnmanagedInterface, *PlClrUnmanagedInterfacePtr;
-
-typedef void* (CORECLR_DELEGATE_CALLTYPE *PlClrMainDelegate)(void *arg, int arg_size_in_bytes);
 
 /* Forward declarations */
 static void* open_dynamic_library(const clr_char* path);
@@ -42,6 +86,7 @@ static void plclr_ereport(int elevel, const char* errmsg_internal_value, int* er
 	int* errposition_value, Oid* errdatatype_value);
 static void* plclr_get_text(Datum);
 static Datum plclr_set_text(char* utf8String);
+static PlClrTypeInfoPtr plclr_get_type_info(Oid typeOid);
 
 /* Globals to hold managed exports */
 static hostfxr_close_fn hostfxr_close;
@@ -144,6 +189,9 @@ plclr_runtime_host_init(void)
 	setupInfo->RePallocFunctionPtr = repalloc;
 	setupInfo->GetTextFunctionPtr = plclr_get_text;
 	setupInfo->SetTextFunctionPtr = plclr_set_text;
+	setupInfo->GetTypeInfoFunctionPtr = plclr_get_type_info;
+	setupInfo->DeToastDatumFunctionPtr = pg_detoast_datum;
+	setupInfo->GetAttributeByNumFunctionPtr = GetAttributeByNum;
 
 	plclrManagedInterface = PlClrMain_Setup(setupInfo, sizeof(PlClrUnmanagedInterface));
 
@@ -314,4 +362,85 @@ plclr_set_text(char* utf8String)
 	SET_VARSIZE(outputText, VARHDRSZ + length + 1);
 	memcpy(outputText->vl_dat, outputString, length + 1);
 	return (Datum)outputText;
+}
+
+static PlClrTypeInfoPtr
+plclr_get_type_info(Oid typeOid)
+{
+	HeapTuple	typeTup;
+	Form_pg_type typeStruct;
+	HeapTuple	nsTup;
+	Form_pg_namespace nsStruct;
+	HeapTuple	classTup;
+	Form_pg_class classStruct;
+	HeapTuple	attributeTup;
+	Form_pg_attribute attributeStruct;
+	PlClrTypeInfoPtr typeInfo;
+	
+	typeTup = SearchSysCache1(TYPEOID, ObjectIdGetDatum(typeOid));
+	if (!HeapTupleIsValid(typeTup))
+		elog(ERROR, "cache lookup failed for type %u", typeOid);
+
+	typeStruct = (Form_pg_type) GETSTRUCT(typeTup);
+
+	typeInfo = (PlClrTypeInfoPtr)palloc(sizeof(PlClrTypeInfo));
+	typeInfo->typname = server_encoding_to_clr_char(NameStr(typeStruct->typname));
+	typeInfo->oid = typeStruct->oid;
+	typeInfo->typarray = typeStruct->typarray;
+	typeInfo->typelem = typeStruct->typelem;
+	typeInfo->typbasetype = typeStruct->typbasetype;
+	typeInfo->typndims = typeStruct->typndims;
+	typeInfo->typlen = typeStruct->typlen;
+	typeInfo->typtype = typeStruct->typtype;
+	typeInfo->typnotnull = typeStruct->typnotnull;
+	typeInfo->typbyval = typeStruct->typbyval;
+	
+	nsTup = SearchSysCache1(NAMESPACEOID, ObjectIdGetDatum(typeStruct->typnamespace));
+	if (!HeapTupleIsValid(nsTup))
+		elog(ERROR, "cache lookup failed for namespace %u", typeStruct->typnamespace);
+
+	nsStruct = (Form_pg_namespace) GETSTRUCT(nsTup);
+	typeInfo->nspname = server_encoding_to_clr_char(NameStr(nsStruct->nspname));
+	ReleaseSysCache(nsTup);
+	
+	switch (typeStruct->typtype)
+	{
+	case 'c':
+		classTup = SearchSysCache1(RELOID, ObjectIdGetDatum(typeStruct->typrelid));
+		if (!HeapTupleIsValid(classTup))
+			elog(ERROR, "cache lookup failed for composite type %u", typeStruct->typrelid);
+
+		classStruct = (Form_pg_class) GETSTRUCT(classTup);
+
+		typeInfo->typclass = (PlClrClassInfoPtr)palloc(sizeof(PlClrClassInfo));
+
+		typeInfo->typclass->oid = classStruct->oid;
+		typeInfo->typclass->relnatts = classStruct->relnatts;
+		typeInfo->typclass->relattributes = (PlClrAttributeInfoPtr)palloc(classStruct->relnatts * sizeof(PlClrAttributeInfo));
+
+		for (int16 i = 0; i < classStruct->relnatts; i++)
+		{
+			attributeTup = SearchSysCacheAttNum(typeStruct->typrelid, i + 1);
+			if (!HeapTupleIsValid(attributeTup))
+				elog(ERROR, "cache lookup failed for composite type attribute %u", typeStruct->typrelid);
+
+			attributeStruct = (Form_pg_attribute) GETSTRUCT(attributeTup);
+
+			typeInfo->typclass->relattributes[i].attname = server_encoding_to_clr_char(NameStr(attributeStruct->attname));
+			typeInfo->typclass->relattributes[i].atttypid = attributeStruct->atttypid;
+			typeInfo->typclass->relattributes[i].attnum = attributeStruct->attnum;
+			typeInfo->typclass->relattributes[i].attnotnull = attributeStruct->attnotnull;
+
+			ReleaseSysCache(attributeTup);
+		}
+
+		ReleaseSysCache(classTup);
+		break;
+	default:
+		typeInfo->typclass = NULL;
+		break;
+	}
+	
+	ReleaseSysCache(typeTup);
+	return typeInfo;
 }
