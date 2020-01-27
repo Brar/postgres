@@ -12,6 +12,8 @@ namespace PlClr.Managed.Tests
         private readonly Log _log;
         private readonly MemoryContext _memoryContext;
         private readonly Function _function;
+        private readonly FunctionCall _functionCall;
+        private readonly Types _types;
         private readonly List<IntPtr> _unmanagedMemoryPointers = new List<IntPtr>();
         private readonly uint _functionOidDefault = (uint)Random.Next(100000000, 999999999);
         private readonly string _functionNameDefault = "TestFunction";
@@ -21,6 +23,8 @@ namespace PlClr.Managed.Tests
             _memoryContext = new MemoryContext(memoryContextSize);
             _log = new Log(MemoryContext.PFree);
             _function = new Function(MemoryContext.PAlloc);
+            _functionCall = new FunctionCall(MemoryContext.PAlloc);
+            _types = new Types(MemoryContext.PAlloc);
         }
 
         public Log Log
@@ -45,7 +49,7 @@ namespace PlClr.Managed.Tests
             }
         }
 
-		public Function Function
+        public Function Function
         {
             get
             {
@@ -55,6 +59,29 @@ namespace PlClr.Managed.Tests
                 return _function;
             }
         }
+
+        public FunctionCall FunctionCall
+        {
+            get
+            {
+                if (_disposed)
+                    throw new ObjectDisposedException(nameof(TestHelper));
+
+                return _functionCall;
+            }
+        }
+
+        public Types Types
+        {
+            get
+            {
+                if (_disposed)
+                    throw new ObjectDisposedException(nameof(TestHelper));
+
+                return _types;
+            }
+        }
+
         public uint FunctionOidDefault
         {
             get
@@ -77,18 +104,24 @@ namespace PlClr.Managed.Tests
             }
         }
 
-
-		public (IntPtr unmanagedInterfacePointer, int unmanagedInterfaceSize) GetUnmanagedInterface()
+        public (IntPtr unmanagedInterfacePointer, int unmanagedInterfaceSize) GetUnmanagedInterface()
         {
             PlClrUnmanagedInterface i;
+
+            i.PAllocFunctionPtr = MemoryContext.GetPAllocFunctionPointer();
+            i.PAlloc0FunctionPtr = MemoryContext.GetPAlloc0FunctionPointer();
+            i.RePAllocFunctionPtr = MemoryContext.GetRePAllocFunctionPointer();
+            i.PFreeFunctionPtr = MemoryContext.GetPFreeFunctionPointer();
+            
             i.ELogFunctionPtr = Log.GetELogFunctionPointer();
             i.EReportFunctionPtr = Log.GetEReportFunctionPointer();
-            i.PFreeFunctionPtr = MemoryContext.GetPFreeFunctionPointer();
-            i.PAlloc0FunctionPtr = MemoryContext.GetPAlloc0FunctionPointer();
-            i.PAllocFunctionPtr = MemoryContext.GetPAllocFunctionPointer();
-            i.RePAllocFunctionPtr = MemoryContext.GetRePAllocFunctionPointer();
+
+            i.GetTypeInfoFunctionPtr = Types.GetGetTypeInfoFunctionPtr();
             i.GetTextFunctionPtr = Function.GetGetTextFunctionPointer();
             i.SetTextFunctionPtr = Function.GetSetTextFunctionPointer();
+            i.DeToastDatumFunctionPtr = FunctionCall.GetDeToastDatumFunctionPointer();
+            i.GetAttributeByNumFunctionPtr = FunctionCall.GetGetAttributeByNumFunctionPtr();
+
             var unmanagedInterfaceSize = System.Runtime.InteropServices.Marshal.SizeOf<PlClrUnmanagedInterface>();
             var unmanagedInterfacePointer = System.Runtime.InteropServices.Marshal.AllocCoTaskMem(unmanagedInterfaceSize);
             _unmanagedMemoryPointers.Add(unmanagedInterfacePointer);
@@ -100,7 +133,7 @@ namespace PlClr.Managed.Tests
         {
             var (unmanagedInterfacePointer, unmanagedInterfaceSize) = GetUnmanagedInterface();
             var managedInterfacePointer = PlClrMain.Setup(unmanagedInterfacePointer, unmanagedInterfaceSize);
-            MemoryContext.PFree(managedInterfacePointer);
+            System.Runtime.InteropServices.Marshal.FreeHGlobal(managedInterfacePointer);
 
             FunctionCompileInfo functionCompileInfo;
             functionCompileInfo.FunctionOid = oid ?? FunctionOidDefault;
