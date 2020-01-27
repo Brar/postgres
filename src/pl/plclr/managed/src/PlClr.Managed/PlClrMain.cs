@@ -106,6 +106,7 @@ namespace PlClr
         /// <returns></returns>
         public static IntPtr Setup(IntPtr arg, int argLength)
         {
+            var ptr = IntPtr.Zero;
             try
             {
                 if (arg == IntPtr.Zero)
@@ -190,13 +191,14 @@ namespace PlClr
                 var size = System.Runtime.InteropServices.Marshal.SizeOf<PlClrManagedInterface>();
 
                 // We shall not palloc here because our managed interface needs to live as long as the process lives.
-                var ptr = System.Runtime.InteropServices.Marshal.AllocHGlobal(size);
+                ptr = System.Runtime.InteropServices.Marshal.AllocHGlobal(size);
                 System.Runtime.InteropServices.Marshal.StructureToPtr(managedInterface, ptr, false);
                 
                 return ptr;
             }
             catch (Exception e)
             {
+                if (ptr != IntPtr.Zero) System.Runtime.InteropServices.Marshal.FreeHGlobal(ptr);
                 Console.Error.WriteLine($"An unexpected exception occured during PL/CLR setup: {e}");
                 return IntPtr.Zero;
             }
