@@ -1,16 +1,15 @@
 Next steps:
 
-- Make unit tests run on windows as part of vcregress plcheck
 - Add function executon to unit tests
 - Implement returning composite types
 
 
 Future:
 
+- Implement support for VARARGS arguments
 - Fix function caching
 - Implement returning sets
 - Implement support for OUT and INOUT arguments
-- Implement support for VARARGS arguments
 - Create a SPI wrapper
 - Add execute error callback
 - Generate better compiler errors, warnings and infos using ereport

@@ -318,6 +318,20 @@ sub plcheck
 {
 	chdir "$topdir/src/pl";
 
+	if ($config->{clr}) {
+		my $dotnet = 'dotnet';
+		if (-d $config->{clr})
+		{
+			$dotnet = $config->{clr} . "\\dotnet";
+		}
+
+		# Run managed unit tests
+		print `$dotnet test --nologo --configuration $Config plclr/managed/test/PlClr.Managed.Tests/PlClr.Managed.Tests.csproj`;
+		my $status = $? >> 8;
+		exit $status if $status;
+	}
+
+
 	foreach my $dir (glob("*/src *"))
 	{
 		next unless -d "$dir/sql" && -d "$dir/expected";
