@@ -334,8 +334,8 @@ static void*
 plclr_get_text(Datum arg)
 {
 	text* server_encoded_text = DatumGetTextPP(arg);
-	clr_char* clr_encoded_text = server_encoding_to_clr_char(VARDATA_ANY(server_encoded_text));
-
+	int length = VARSIZE_ANY_EXHDR(arg);
+	clr_char* clr_encoded_text = server_encoding_to_clr_char(VARDATA_ANY(server_encoded_text), length);
 	if ((Pointer) server_encoded_text != DatumGetPointer(arg))
 		pfree(server_encoded_text);
 
@@ -384,7 +384,7 @@ plclr_get_type_info(Oid typeOid)
 	typeStruct = (Form_pg_type) GETSTRUCT(typeTup);
 
 	typeInfo = (PlClrTypeInfoPtr)palloc(sizeof(PlClrTypeInfo));
-	typeInfo->typname = server_encoding_to_clr_char(NameStr(typeStruct->typname));
+	typeInfo->typname = server_encoding_to_clr_char(NameStr(typeStruct->typname), -1);
 	typeInfo->oid = typeStruct->oid;
 	typeInfo->typarray = typeStruct->typarray;
 	typeInfo->typelem = typeStruct->typelem;
@@ -400,7 +400,7 @@ plclr_get_type_info(Oid typeOid)
 		elog(ERROR, "cache lookup failed for namespace %u", typeStruct->typnamespace);
 
 	nsStruct = (Form_pg_namespace) GETSTRUCT(nsTup);
-	typeInfo->nspname = server_encoding_to_clr_char(NameStr(nsStruct->nspname));
+	typeInfo->nspname = server_encoding_to_clr_char(NameStr(nsStruct->nspname), -1);
 	ReleaseSysCache(nsTup);
 	
 	switch (typeStruct->typtype)
@@ -426,7 +426,7 @@ plclr_get_type_info(Oid typeOid)
 
 			attributeStruct = (Form_pg_attribute) GETSTRUCT(attributeTup);
 
-			typeInfo->typclass->relattributes[i].attname = server_encoding_to_clr_char(NameStr(attributeStruct->attname));
+			typeInfo->typclass->relattributes[i].attname = server_encoding_to_clr_char(NameStr(attributeStruct->attname), -1);
 			typeInfo->typclass->relattributes[i].atttypid = attributeStruct->atttypid;
 			typeInfo->typclass->relattributes[i].attnum = attributeStruct->attnum;
 			typeInfo->typclass->relattributes[i].attnotnull = attributeStruct->attnotnull;

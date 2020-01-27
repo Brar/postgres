@@ -1,6 +1,4 @@
 -- first test some basic functionality
-CREATE EXTENSION IF NOT EXISTS plclr;
-NOTICE:  extension "plclr" already exists, skipping
 -- simple function to get the module loaded
 CREATE FUNCTION plclr_regress_simple() RETURNS void AS '/* 😇 */' LANGUAGE plclr;
 select plclr_regress_simple();
@@ -50,4 +48,18 @@ select plclr_regress_concat_text('The answer is 4', '2!');
 ---------------------------
  The answer is 42!
 (1 row)
+
+CREATE TABLE emp
+(
+	name TEXT NOT NULL,
+	salary integer NOT NULL
+);
+COPY emp FROM STDIN;
+CREATE FUNCTION plclr_overpaid(emp, integer) RETURNS boolean AS 'return arg1.salary > arg2;' STRICT LANGUAGE plclr;
+SELECT name, plclr_overpaid(emp, 1500) AS overpaid FROM emp WHERE name = 'Bill' OR name = 'Sam';
+ name | overpaid 
+------+----------
+ Bill | f
+ Sam  | t
+(2 rows)
 

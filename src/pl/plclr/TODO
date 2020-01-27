@@ -1,14 +1,28 @@
 Next steps:
 
-- Implement composite type arguments
-- Generate syntax tree via SyntaxFactory
+- Fix the problem that Windows needs to run CREATE extension whereas Linux already has the extension installed, leading to regession test failures
+- Fix unit tests
+- Make unit tests run on windows as part of vcregress plcheck
+- Add function executon to unit tests
 - Implement returning composite types
+
+
+Future:
+
+- Fix function caching
 - Implement returning sets
 - Implement support for OUT and INOUT arguments
+- Implement support for VARARGS arguments
 - Create a SPI wrapper
 - Add execute error callback
 - Generate better compiler errors, warnings and infos using ereport
-- call hostfxr_close on planned backend shutdown
-- generate PostgreSqlErrorCode values from src/include/utils/errcodes.txt
+- Call hostfxr_close on planned backend shutdown
+- Autogenerate PostgreSqlErrorCode values from src/include/utils/errcodes.txt
+- Autogenerate various system catalog related files (Servertypes, ...) from the source files
 - Unload generated assemblies when recompiling (use AssemblyLoadContext?)
-- lock managed and unmanaged versions together
+- Lock managed and unmanaged versions together
+- Implement passing and returning domains
+- Implement passing and returning arrays
+- Implement passing and returning ranges
+- Implement passing and returning pseudo types
+- Generate syntax tree via SyntaxFactory

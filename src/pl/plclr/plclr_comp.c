@@ -130,8 +130,8 @@ plclr_compile_function(FunctionCallInfo fcinfo, HeapTuple procTup, PlClr_functio
 		    compileInfo.ReturnValueType = procStruct->prorettype;
 		    compileInfo.ReturnsSet = procStruct->proretset;
 			compileInfo.IsStrict = procStruct->proisstrict;
-		    compileInfo.FunctionName = server_encoding_to_clr_char(plclr_funcname);
-		    compileInfo.FunctionBody = server_encoding_to_clr_char(proc_source);
+		    compileInfo.FunctionName = server_encoding_to_clr_char(plclr_funcname, -1);
+		    compileInfo.FunctionBody = server_encoding_to_clr_char(proc_source, -1);
 
 		    numargs = get_func_arg_info(procTup, &argtypes, &argnames, &argmodes);
 
@@ -157,7 +157,7 @@ plclr_compile_function(FunctionCallInfo fcinfo, HeapTuple procTup, PlClr_functio
 		            clr_char** unicode_argnames = palloc(numargs * sizeof(clr_char*));
 		            for (int i = numargs - 1; i >= 0; i--)
 		            {
-			            unicode_argnames[i] = server_encoding_to_clr_char(argnames[i]);
+			            unicode_argnames[i] = server_encoding_to_clr_char(argnames[i], -1);
 		            }
 		            compileInfo.ArgumentNames = unicode_argnames;
 		        }
