@@ -66,14 +66,17 @@ namespace PlClr.Managed.Tests
         {
             using var h = new TestHelper();
             PlClrUnmanagedInterface i;
+            i.PAllocFunctionPtr = IntPtr.Zero;
+            i.PAlloc0FunctionPtr = h.MemoryContext.GetPAlloc0FunctionPointer();
+            i.RePAllocFunctionPtr = h.MemoryContext.GetRePAllocFunctionPointer();
+            i.PFreeFunctionPtr = h.MemoryContext.GetPFreeFunctionPointer();
             i.ELogFunctionPtr = h.Log.GetELogFunctionPointer();
             i.EReportFunctionPtr = h.Log.GetEReportFunctionPointer();
-            i.PFreeFunctionPtr = h.MemoryContext.GetPFreeFunctionPointer();
-            i.PAlloc0FunctionPtr = h.MemoryContext.GetPAlloc0FunctionPointer();
-            i.PAllocFunctionPtr = IntPtr.Zero;
-            i.RePAllocFunctionPtr = h.MemoryContext.GetRePAllocFunctionPointer();
+            i.GetTypeInfoFunctionPtr = h.Types.GetGetTypeInfoFunctionPtr();
             i.GetTextFunctionPtr = h.Function.GetGetTextFunctionPointer();
             i.SetTextFunctionPtr = h.Function.GetSetTextFunctionPointer();
+            i.DeToastDatumFunctionPtr = h.FunctionCall.GetDeToastDatumFunctionPointer();
+            i.GetAttributeByNumFunctionPtr = h.FunctionCall.GetGetAttributeByNumFunctionPtr();
             var unmanagedInterfaceSize = System.Runtime.InteropServices.Marshal.SizeOf<PlClrUnmanagedInterface>();
             var unmanagedInterfacePointer = h.AllocCoTaskMem(unmanagedInterfaceSize);
             System.Runtime.InteropServices.Marshal.StructureToPtr(i, unmanagedInterfacePointer, false);
@@ -91,14 +94,17 @@ namespace PlClr.Managed.Tests
         {
             using var h = new TestHelper();
             PlClrUnmanagedInterface i;
+            i.PAllocFunctionPtr = h.MemoryContext.GetPAllocFunctionPointer();
+            i.PAlloc0FunctionPtr = IntPtr.Zero;
+            i.RePAllocFunctionPtr = h.MemoryContext.GetRePAllocFunctionPointer();
+            i.PFreeFunctionPtr = h.MemoryContext.GetPFreeFunctionPointer();
             i.ELogFunctionPtr = h.Log.GetELogFunctionPointer();
             i.EReportFunctionPtr = h.Log.GetEReportFunctionPointer();
-            i.PFreeFunctionPtr = h.MemoryContext.GetPFreeFunctionPointer();
-            i.PAlloc0FunctionPtr = IntPtr.Zero;
-            i.PAllocFunctionPtr = h.MemoryContext.GetPAllocFunctionPointer();
-            i.RePAllocFunctionPtr = h.MemoryContext.GetRePAllocFunctionPointer();
+            i.GetTypeInfoFunctionPtr = h.Types.GetGetTypeInfoFunctionPtr();
             i.GetTextFunctionPtr = h.Function.GetGetTextFunctionPointer();
             i.SetTextFunctionPtr = h.Function.GetSetTextFunctionPointer();
+            i.DeToastDatumFunctionPtr = h.FunctionCall.GetDeToastDatumFunctionPointer();
+            i.GetAttributeByNumFunctionPtr = h.FunctionCall.GetGetAttributeByNumFunctionPtr();
             var unmanagedInterfaceSize = System.Runtime.InteropServices.Marshal.SizeOf<PlClrUnmanagedInterface>();
             var unmanagedInterfacePointer = h.AllocCoTaskMem(unmanagedInterfaceSize);
             System.Runtime.InteropServices.Marshal.StructureToPtr(i, unmanagedInterfacePointer, false);
@@ -116,14 +122,17 @@ namespace PlClr.Managed.Tests
         {
             using var h = new TestHelper();
             PlClrUnmanagedInterface i;
+            i.PAllocFunctionPtr = h.MemoryContext.GetPAllocFunctionPointer();
+            i.PAlloc0FunctionPtr = h.MemoryContext.GetPAlloc0FunctionPointer();
+            i.RePAllocFunctionPtr = IntPtr.Zero;
+            i.PFreeFunctionPtr = h.MemoryContext.GetPFreeFunctionPointer();
             i.ELogFunctionPtr = h.Log.GetELogFunctionPointer();
             i.EReportFunctionPtr = h.Log.GetEReportFunctionPointer();
-            i.PFreeFunctionPtr = h.MemoryContext.GetPFreeFunctionPointer();
-            i.PAlloc0FunctionPtr = h.MemoryContext.GetPAllocFunctionPointer();
-            i.PAllocFunctionPtr = h.MemoryContext.GetPAllocFunctionPointer();
-            i.RePAllocFunctionPtr = IntPtr.Zero;
+            i.GetTypeInfoFunctionPtr = h.Types.GetGetTypeInfoFunctionPtr();
             i.GetTextFunctionPtr = h.Function.GetGetTextFunctionPointer();
             i.SetTextFunctionPtr = h.Function.GetSetTextFunctionPointer();
+            i.DeToastDatumFunctionPtr = h.FunctionCall.GetDeToastDatumFunctionPointer();
+            i.GetAttributeByNumFunctionPtr = h.FunctionCall.GetGetAttributeByNumFunctionPtr();
             var unmanagedInterfaceSize = System.Runtime.InteropServices.Marshal.SizeOf<PlClrUnmanagedInterface>();
             var unmanagedInterfacePointer = h.AllocCoTaskMem(unmanagedInterfaceSize);
             System.Runtime.InteropServices.Marshal.StructureToPtr(i, unmanagedInterfacePointer, false);
@@ -141,14 +150,17 @@ namespace PlClr.Managed.Tests
         {
             using var h = new TestHelper();
             PlClrUnmanagedInterface i;
+            i.PAllocFunctionPtr = h.MemoryContext.GetPAllocFunctionPointer();
+            i.PAlloc0FunctionPtr = h.MemoryContext.GetPAlloc0FunctionPointer();
+            i.RePAllocFunctionPtr = h.MemoryContext.GetRePAllocFunctionPointer();
+            i.PFreeFunctionPtr = IntPtr.Zero;
             i.ELogFunctionPtr = h.Log.GetELogFunctionPointer();
             i.EReportFunctionPtr = h.Log.GetEReportFunctionPointer();
-            i.PFreeFunctionPtr = IntPtr.Zero;
-            i.PAlloc0FunctionPtr = h.MemoryContext.GetPAllocFunctionPointer();
-            i.PAllocFunctionPtr = h.MemoryContext.GetPAllocFunctionPointer();
-            i.RePAllocFunctionPtr = h.MemoryContext.GetRePAllocFunctionPointer();
+            i.GetTypeInfoFunctionPtr = h.Types.GetGetTypeInfoFunctionPtr();
             i.GetTextFunctionPtr = h.Function.GetGetTextFunctionPointer();
             i.SetTextFunctionPtr = h.Function.GetSetTextFunctionPointer();
+            i.DeToastDatumFunctionPtr = h.FunctionCall.GetDeToastDatumFunctionPointer();
+            i.GetAttributeByNumFunctionPtr = h.FunctionCall.GetGetAttributeByNumFunctionPtr();
             var unmanagedInterfaceSize = System.Runtime.InteropServices.Marshal.SizeOf<PlClrUnmanagedInterface>();
             var unmanagedInterfacePointer = h.AllocCoTaskMem(unmanagedInterfaceSize);
             System.Runtime.InteropServices.Marshal.StructureToPtr(i, unmanagedInterfacePointer, false);
@@ -166,14 +178,17 @@ namespace PlClr.Managed.Tests
         {
             using var h = new TestHelper();
             PlClrUnmanagedInterface i;
+            i.PAllocFunctionPtr = h.MemoryContext.GetPAllocFunctionPointer();
+            i.PAlloc0FunctionPtr = h.MemoryContext.GetPAlloc0FunctionPointer();
+            i.RePAllocFunctionPtr = h.MemoryContext.GetRePAllocFunctionPointer();
+            i.PFreeFunctionPtr = h.MemoryContext.GetPFreeFunctionPointer();
             i.ELogFunctionPtr = IntPtr.Zero;
             i.EReportFunctionPtr = h.Log.GetEReportFunctionPointer();
-            i.PFreeFunctionPtr = h.MemoryContext.GetPFreeFunctionPointer();
-            i.PAlloc0FunctionPtr = h.MemoryContext.GetPAllocFunctionPointer();
-            i.PAllocFunctionPtr = h.MemoryContext.GetPAllocFunctionPointer();
-            i.RePAllocFunctionPtr = h.MemoryContext.GetRePAllocFunctionPointer();
+            i.GetTypeInfoFunctionPtr = h.Types.GetGetTypeInfoFunctionPtr();
             i.GetTextFunctionPtr = h.Function.GetGetTextFunctionPointer();
             i.SetTextFunctionPtr = h.Function.GetSetTextFunctionPointer();
+            i.DeToastDatumFunctionPtr = h.FunctionCall.GetDeToastDatumFunctionPointer();
+            i.GetAttributeByNumFunctionPtr = h.FunctionCall.GetGetAttributeByNumFunctionPtr();
             var unmanagedInterfaceSize = System.Runtime.InteropServices.Marshal.SizeOf<PlClrUnmanagedInterface>();
             var unmanagedInterfacePointer = h.AllocCoTaskMem(unmanagedInterfaceSize);
             System.Runtime.InteropServices.Marshal.StructureToPtr(i, unmanagedInterfacePointer, false);
@@ -184,35 +199,6 @@ namespace PlClr.Managed.Tests
             Assert.Empty(h.Log.ConsoleOut);
             Assert.Equal($"Field ELogFunctionPtr in struct PlClrUnmanagedInterface must not be NULL{Environment.NewLine}", h.Log.ConsoleError);
             Assert.Empty(h.Log.ELogMessages);
-        }
-
-        [Fact]
-        public void SetupUnexpectedException()
-        {
-            using var h = new TestHelper();
-            PlClrUnmanagedInterface i;
-            i.ELogFunctionPtr = h.Log.GetELogFunctionPointer();
-            i.EReportFunctionPtr = h.Log.GetEReportFunctionPointer();
-            i.PFreeFunctionPtr = h.MemoryContext.GetPFreeFunctionPointer();
-            i.PAlloc0FunctionPtr = h.MemoryContext.GetPAlloc0FunctionPointer();
-            i.PAllocFunctionPtr = h.MemoryContext.GetPAllocFunctionPointer(ThrowingPAlloc);
-            i.RePAllocFunctionPtr = h.MemoryContext.GetRePAllocFunctionPointer();
-            i.GetTextFunctionPtr = h.Function.GetGetTextFunctionPointer();
-            i.SetTextFunctionPtr = h.Function.GetSetTextFunctionPointer();
-            var unmanagedInterfaceSize = System.Runtime.InteropServices.Marshal.SizeOf<PlClrUnmanagedInterface>();
-            var unmanagedInterfacePointer = h.AllocCoTaskMem(unmanagedInterfaceSize);
-            System.Runtime.InteropServices.Marshal.StructureToPtr(i, unmanagedInterfacePointer, false);
-
-            var resultPtr = PlClrMain.Setup(unmanagedInterfacePointer, unmanagedInterfaceSize);
-
-            Assert.Equal(IntPtr.Zero, resultPtr);
-            Assert.Empty(h.Log.ConsoleOut);
-            Assert.StartsWith(
-                $"An unexpected exception occured during PL/CLR setup: System.InvalidOperationException: This is a Test!",
-                h.Log.ConsoleError);
-            Assert.Empty(h.Log.ELogMessages);
-
-            static IntPtr ThrowingPAlloc(ulong size) => throw new InvalidOperationException("This is a Test!");
         }
 
         [Fact]
@@ -306,8 +292,8 @@ public static class PlClrClass_" + h.FunctionOidDefault + @"
 {
 	public static IntPtr Execute_AddTwoIntegers(NullableDatum[] values)
 	{
-		var arg1 = values[0].IsNull ? (System.Int32?)null : ServerFunctions.GetInt32(values[0].Value);
-		var arg2 = values[1].IsNull ? (System.Int32?)null : ServerFunctions.GetInt32(values[1].Value);
+		var arg1 = values[0].IsNull ? (System.Int32?)null : ServerFunctions.DatumGetInt32(values[0].Value);
+		var arg2 = values[1].IsNull ? (System.Int32?)null : ServerFunctions.DatumGetInt32(values[1].Value);
 
 		var result = AddTwoIntegers(arg1, arg2);
 		NullableDatum returnValue;
@@ -319,7 +305,7 @@ public static class PlClrClass_" + h.FunctionOidDefault + @"
 		else
 		{
 			returnValue.IsNull = false;
-			returnValue.Value = ServerFunctions.GetDatum((System.Int32)result);
+			returnValue.Value = PlClr.ServerFunctions.Int32GetDatum((System.Int32)result);
 		}
 
 		return Marshal.StructureToPtrPalloc(returnValue);
@@ -370,13 +356,13 @@ public static class PlClrClass_" + h.FunctionOidDefault + @"
 {
 	public static IntPtr Execute_AddTwoIntegers(NullableDatum[] values)
 	{
-		var arg1 = ServerFunctions.GetInt32(values[0].Value);
-		var arg2 = ServerFunctions.GetInt32(values[1].Value);
+		var arg1 = ServerFunctions.DatumGetInt32(values[0].Value);
+		var arg2 = ServerFunctions.DatumGetInt32(values[1].Value);
 
 		var result = AddTwoIntegers(arg1, arg2);
 		NullableDatum returnValue;
 		returnValue.IsNull = false;
-		returnValue.Value = ServerFunctions.GetDatum(result);
+		returnValue.Value = PlClr.ServerFunctions.Int32GetDatum(result);
 
 		return Marshal.StructureToPtrPalloc(returnValue);
 	}
@@ -422,8 +408,8 @@ public static class PlClrClass_" + h.FunctionOidDefault + @"
 {
 	public static IntPtr Execute_AddTwoIntegers(NullableDatum[] values)
 	{
-		var first = values[0].IsNull ? (System.Int32?)null : ServerFunctions.GetInt32(values[0].Value);
-		var second = values[1].IsNull ? (System.Int32?)null : ServerFunctions.GetInt32(values[1].Value);
+		var first = values[0].IsNull ? (System.Int32?)null : ServerFunctions.DatumGetInt32(values[0].Value);
+		var second = values[1].IsNull ? (System.Int32?)null : ServerFunctions.DatumGetInt32(values[1].Value);
 
 		var result = AddTwoIntegers(first, second);
 		NullableDatum returnValue;
@@ -435,7 +421,7 @@ public static class PlClrClass_" + h.FunctionOidDefault + @"
 		else
 		{
 			returnValue.IsNull = false;
-			returnValue.Value = ServerFunctions.GetDatum((System.Int32)result);
+			returnValue.Value = PlClr.ServerFunctions.Int32GetDatum((System.Int32)result);
 		}
 
 		return Marshal.StructureToPtrPalloc(returnValue);
