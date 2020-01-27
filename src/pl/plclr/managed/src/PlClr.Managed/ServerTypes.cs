@@ -1,28 +1,70 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Diagnostics.CodeAnalysis;
-using static PlClr.Globals;
 
 namespace PlClr
 {
-    public static class ServerTypes
+    public static partial class ServerTypes
     {
         private static readonly Dictionary<uint, string> ValueAccessMethodCache = new Dictionary<uint, string>();
-        private static readonly Dictionary<uint, TypeInfo> KnownTypes = new Dictionary<uint, TypeInfo>();
+        private static readonly Dictionary<uint, Type> TypeCache = new Dictionary<uint, Type>();
+        private static readonly Dictionary<uint, TypeAccessInfo> TypeAccessInfoCache = new Dictionary<uint, TypeAccessInfo>();
 
+        internal static TypeInfo GetTypeInfo(uint oid)
+            => oid switch
+            {
+                _ => LookupOrCreateTypeInfo(oid)
+            };
+
+        private static TypeInfo LookupOrCreateTypeInfo(uint oid)
+        {
+            if (TypeInfoCache.TryGetValue(oid, out var value))
+                return value;
+
+            var typeInfo = ServerFunctions.GetTypeInfo(oid);
+            TypeInfoCache[oid] = typeInfo;
+            return typeInfo;
+        }
+
+        internal static TypeAccessInfo GeTypeAccessInfo(uint oid)
+            => oid switch
+            {
+                16 => BoolTypeAccessInfo,
+                20 => Int64TypeAccessInfo,
+                21 => Int16TypeAccessInfo,
+                23 => Int32TypeAccessInfo,
+                25 => TextTypeAccessInfo,
+                26 => OidTypeAccessInfo,
+                700 => FloatTypeAccessInfo,
+                701 => DoubleTypeAccessInfo,
+                2278 => VoidTypeAccessInfo,
+                _ => LookupOrCreateTypeAccessInfo(oid)
+            };
+
+        private static TypeAccessInfo LookupOrCreateTypeAccessInfo(uint oid)
+        {
+            if (TypeAccessInfoCache.TryGetValue(oid, out var value))
+                return value;
+
+            var typeInfo = GetTypeInfo(oid);
+            var typeAccessInfo = CSharpCompiler.CreateTypeAccessInfo(typeInfo);
+            TypeAccessInfoCache[oid] = typeAccessInfo;
+            return typeAccessInfo;
+        }
+
+/*
         public static string GetValueAccessMethodForOid(uint oid)
             => oid switch
             {
-                16 => nameof(BackendFunctions.GetBool), // bool
+                16 => $"{nameof(BackendFunctions)}.{nameof(BackendFunctions.GetBool)}", // bool
                 // 17 => typeof(bytea), // bytea
                 // 18 => typeof(char), // char
                 // 19 => typeof(name), // name
-                20 => nameof(BackendFunctions.GetInt64), // int8
-                21 => nameof(BackendFunctions.GetInt16), // int2
+                20 => $"{nameof(BackendFunctions)}.{nameof(BackendFunctions.GetInt64)}", // int8
+                21 => $"{nameof(BackendFunctions)}.{nameof(BackendFunctions.GetInt16)}", // int2
                 // 22 => typeof(int2vector), // int2vector
-                23 => nameof(BackendFunctions.GetInt32), // int4
+                23 => $"{nameof(BackendFunctions)}.{nameof(BackendFunctions.GetInt32)}", // int4
                 // 24 => typeof(regproc), // regproc
-                25 => nameof(BackendFunctions.GetText), // text
+                25 => $"{nameof(BackendFunctions)}.{nameof(BackendFunctions.GetText)}", // text
                 // 26 => typeof(uint), // oid
                 // 27 => typeof(tid), // tid
                 // 28 => typeof(xid), // xid
@@ -192,14 +234,17 @@ namespace PlClr
             if (ValueAccessMethodCache.TryGetValue(oid, out value))
                 return true;
 
-            if (!KnownTypes.TryGetValue(oid, out var ti))
+            if (!TypeInfoCache.TryGetValue(oid, out var ti))
             {
                 ti = BackendFunctions.GetTypeInfo(oid);
-                KnownTypes[oid] = ti;
+                TypeInfoCache[oid] = ti;
             }
 
-            value = CSharpCompiler.CreateValueAccessMethod(ti);
+            var typeAccessInfo = CSharpCompiler.CreateTypeAccessInfo(ti);
+
+            value = $"{typeAccessInfo.AccessMethodType.Name}.{typeAccessInfo.AccessMethodName}";
             ValueAccessMethodCache[oid] = value;
+            TypeCache[oid] = typeAccessInfo.AccessMethodType;
             return true;
         }
 
@@ -543,10 +588,13 @@ namespace PlClr
                 // 4096 => typeof(regrole), // regrole
                 // 4097 => typeof(_regrole), // _regrole
                 // 5017 => typeof(pg_mcv_list), // pg_mcv_list
-                _ => throw ServerLog.EReport(
-                    SeverityLevel.Error,
-                    errorMessageInternal: $"The type with Oid {oid} is currently not supported by PL/CLR.",
-                    errorDataType: oid)!
+                _ => TypeCache.TryGetValue(oid, out var value)
+                    ? value
+                    : throw ServerLog.EReport(
+                        SeverityLevel.Error,
+                        $"The type with Oid {oid} is currently not supported by PL/CLR.",
+                        errorDataType: oid)!
             };
+            */
     }
 }
