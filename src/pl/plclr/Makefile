@@ -35,7 +35,7 @@ DATA += plclr.control plclr--1.0.sql plclr--unpackaged--1.0.sql
 
 SHLIB_LINK = $(filter -lintl,$(LIBS))
 
-REGRESS_OPTS = --dbname=$(PL_TESTDB)
+REGRESS_OPTS = --dbname=$(PL_TESTDB) --load-extension=plclr
 
 REGRESS = plclr_test
 
