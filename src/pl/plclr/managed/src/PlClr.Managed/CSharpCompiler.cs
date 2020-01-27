@@ -2,18 +2,32 @@
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.Emit;
 using System;
+using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Reflection;
 using System.Runtime.Loader;
 using System.Text;
-using System.Text.RegularExpressions;
 
 namespace PlClr
 {
     internal static class CSharpCompiler
     {
+        private static readonly List<MetadataReference> MetadataReferences;
+
+        static CSharpCompiler()
+        {
+            var assemblyPath = Path.GetDirectoryName(typeof(object).Assembly.Location)!;
+            MetadataReferences = new List<MetadataReference>
+            {
+                MetadataReference.CreateFromFile(typeof(object).Assembly.Location),
+                MetadataReference.CreateFromFile(typeof(Console).Assembly.Location),
+                MetadataReference.CreateFromFile(Path.Combine(assemblyPath, "System.Runtime.dll")),
+                MetadataReference.CreateFromFile(typeof(PlClrMain).Assembly.Location)
+            };
+        }
+
         public static FunctionCallDelegate Compile(FunctionCompileInfo func)
         {
             var assemblyLoadContext = AssemblyLoadContext.GetLoadContext(typeof(CSharpCompiler).Assembly)!;
@@ -28,8 +42,10 @@ namespace PlClr
 
         private static Assembly CompileAssembly(FunctionCompileInfo func, AssemblyLoadContext assemblyLoadContext, string assemblyName, string className, string safeMethodName)
         {
-            var returnType = ServerTypes.GetTypeForOid(func.ReturnValueType);
-            var returnTypeName = returnType == typeof(void) ? "void" : returnType.FullName;
+            //var returnType = ServerTypes.GetTypeForOid(func.ReturnValueType);
+            var returnTypeAccessInfo = ServerTypes.GeTypeAccessInfo(func.ReturnValueType);
+            var returnsVoid = returnTypeAccessInfo.MappedType == typeof(void);
+            var returnTypeName = returnsVoid ? "void" : returnTypeAccessInfo.MappedType.FullName;
             var builder = new StringBuilder()
                 .Append($"using {nameof(PlClr)};\n")
                 .Append("using System;\n\n")
@@ -50,25 +66,30 @@ namespace PlClr
                 {
                     builder.AppendJoin($"\n\t\t",
                         func.ArgumentOids.Select((oid, index) =>
-                        $"var {func.ArgumentNames?[index] ?? $"arg{index + 1}"} = {nameof(ServerFunctions)}.{ServerTypes.GetValueAccessMethodForOid(oid)}(values[{index}].Value);"
-                        ));
+                        {
+                            var argumentTypeAccessInfo = ServerTypes.GeTypeAccessInfo(oid);
+                            return $"var {func.ArgumentNames?[index] ?? $"arg{index + 1}"} = {argumentTypeAccessInfo.AccessMethodType.Name}.{argumentTypeAccessInfo.AccessMethodName}(values[{index}].Value);";
+                        }));
                 }
                 else
                 {
                     builder.AppendJoin($"\n\t\t",
                             func.ArgumentOids.Select((oid, index) =>
-                                $"var {func.ArgumentNames?[index] ?? $"arg{index + 1}"} = values[{index}].{nameof(NullableDatum.IsNull)} ? ({ServerTypes.GetTypeForOid(oid).FullName}?)null : {nameof(ServerFunctions)}.{ServerTypes.GetValueAccessMethodForOid(oid)}(values[{index}].{nameof(NullableDatum.Value)});"));
+                            {
+                                var argumentTypeAccessInfo = ServerTypes.GeTypeAccessInfo(oid);
+                                return $"var {func.ArgumentNames?[index] ?? $"arg{index + 1}"} = values[{index}].{nameof(NullableDatum.IsNull)} ? ({argumentTypeAccessInfo.MappedType.FullName}?)null : {argumentTypeAccessInfo.AccessMethodType.Name}.{argumentTypeAccessInfo.AccessMethodName}(values[{index}].{nameof(NullableDatum.Value)});";
+                            }));
                 }
                 builder.Append("\n\n");
             }
-            builder.Append(returnType == typeof(void) ? $"\t\t{safeMethodName}(" : $"\t\tvar result = {safeMethodName}(")
+            builder.Append(returnsVoid ? $"\t\t{safeMethodName}(" : $"\t\tvar result = {safeMethodName}(")
                 .AppendJoin(", ",
                         func.ArgumentOids.Select((oid, index) =>
                             func.ArgumentNames?[index] ?? $"arg{index + 1}"))
                 .Append(");\n\t\t")
                 .Append(nameof(NullableDatum))
                 .Append(" returnValue;\n\t\t");
-            if (returnType == typeof(void))
+            if (returnsVoid)
             {
                 builder.Append("returnValue.")
                     .Append(nameof(NullableDatum.IsNull))
@@ -102,11 +123,11 @@ namespace PlClr
                         .Append("\t\t\treturnValue.")
                         .Append(nameof(NullableDatum.Value))
                         .Append(" = ")
-                        .Append(nameof(ServerFunctions))
+                        .Append(returnTypeAccessInfo.CreationMethodType.FullName)
                         .Append('.')
-                        .Append(ServerTypes.GetValueCreationMethodForOid(func.ReturnValueType))
+                        .Append(returnTypeAccessInfo.CreationMethodName)
                         .Append("((")
-                        .Append(returnType.FullName)
+                        .Append(returnTypeAccessInfo.MappedType.FullName)
                         .Append(")result);\n")
                         .Append("\t\t}\n\n");
                 else
@@ -116,9 +137,9 @@ namespace PlClr
                         .Append("returnValue.")
                         .Append(nameof(NullableDatum.Value))
                         .Append(" = ")
-                        .Append(nameof(ServerFunctions))
+                        .Append(returnTypeAccessInfo.CreationMethodType.FullName)
                         .Append('.')
-                        .Append(ServerTypes.GetValueCreationMethodForOid(func.ReturnValueType))
+                        .Append(returnTypeAccessInfo.CreationMethodName)
                         .Append("(result);\n\n");
 
                 builder.Append(
@@ -131,12 +152,15 @@ namespace PlClr
             builder.Append("\t}\n\n")
                 .Append("\tprivate static ")
                 .Append(returnTypeName)
-                .Append(returnType == typeof(void) || func.IsStrict ? " " : "? ")
+                .Append(returnsVoid || func.IsStrict ? " " : "? ")
                 .Append(safeMethodName)
                 .Append("(")
                 .AppendJoin(", ",
                         func.ArgumentOids.Select((oid, index) =>
-                            $"{ServerTypes.GetTypeForOid(oid).FullName}{(func.IsStrict ? string.Empty : "?")} {func.ArgumentNames?[index] ?? $"arg{index + 1}"}"))
+                        {
+                            var argumentTypeAccessInfo = ServerTypes.GeTypeAccessInfo(oid);
+                            return $"{argumentTypeAccessInfo.MappedType.FullName}{(func.IsStrict ? string.Empty : "?")} {func.ArgumentNames?[index] ?? $"arg{index + 1}"}";
+                        }))
                 .Append(")\n")
                 .Append("\t{\n");
             if (func.FunctionBody.Length > 0)
@@ -150,18 +174,13 @@ namespace PlClr
                 .Append("}\n");
 
             var generatedCode = builder.ToString();
-            ServerLog.ELog(SeverityLevel.Debug1, $"PL/CLR generated code:\n{generatedCode}");
             var tree = CSharpSyntaxTree.ParseText(generatedCode);
+            ServerLog.ELog(SeverityLevel.Debug1, $"PL/CLR generated code:\n{tree}");
 
             var options = new CSharpCompilationOptions(OutputKind.DynamicallyLinkedLibrary, nullableContextOptions: NullableContextOptions.Enable);
 
-            var assemblyPath = Path.GetDirectoryName(typeof(object).Assembly.Location)!;
-            var mscorlib = MetadataReference.CreateFromFile(typeof(object).Assembly.Location);
-            var system = MetadataReference.CreateFromFile(typeof(Console).Assembly.Location);
-            var systemRuntime = MetadataReference.CreateFromFile(Path.Combine(assemblyPath, "System.Runtime.dll"));
-            var plclr = MetadataReference.CreateFromFile(typeof(PlClrMain).Assembly.Location);
             var compilation = CSharpCompilation.Create(assemblyName,
-                syntaxTrees: new[] { tree }, references: new[] { mscorlib, system, systemRuntime, plclr },
+                syntaxTrees: new[] { tree }, references: MetadataReferences,
                 options: options);
 
             var ms = new MemoryStream();
@@ -190,6 +209,11 @@ namespace PlClr
                 return assemblyLoadContext.LoadFromStream(ms);
             }
 
+            throw ReportCompilationFailure(res);
+        }
+
+        private static PlClrUnreachableException ReportCompilationFailure(EmitResult res)
+        {
             static string GetDiagnostics(EmitResult result, DiagnosticSeverity level)
                 => string.Join(Environment.NewLine,
                     result.Diagnostics
@@ -212,17 +236,59 @@ namespace PlClr
             }
 
             var errors = GetDiagnostics(res, DiagnosticSeverity.Error);
-            if (errors.Length > 0)
-            {
-                Debug.WriteLine(errors);
-                ServerLog.ELog(SeverityLevel.Error, errors);
-            }
-
-            // unreachable as Elog >= Error will tear down the process.
-            throw new Exception("Unreachable");
+            Debug.WriteLine(errors);
+            return ServerLog.ELog(SeverityLevel.Error, errors)!;
         }
 
         private static string GetSafeFunctionName(string functionName)
             => new string(functionName.Take(1).Select(c => char.IsLetter(c) ? c : '_').Concat(functionName.Skip(1).Select(c => char.IsLetterOrDigit(c) ? c : '_')).ToArray());
+
+        internal static TypeAccessInfo CreateTypeAccessInfo(TypeInfo typeInfo)
+        {
+            if (typeInfo is CompositeTypeInfo compositeTypeInfo)
+            {
+                var assemblyName = $"PlClrAssembly_{typeInfo.Oid}";
+                var compileData = CSharpTypeGenerator.GetCompileData(compositeTypeInfo);
+                var typeSyntaxTree = compileData.CompilationUnit.SyntaxTree;
+                
+                ServerLog.EReport(SeverityLevel.Debug1, $"PL/CLR generated code for composite type '{compositeTypeInfo.Namespace}.{compositeTypeInfo.Name}' (Oid: {compositeTypeInfo.Oid}):\n{typeSyntaxTree}", errorDataType: typeInfo.Oid);
+
+                var options = new CSharpCompilationOptions(OutputKind.DynamicallyLinkedLibrary, nullableContextOptions: NullableContextOptions.Enable);
+
+                var compilation = CSharpCompilation.Create(assemblyName,
+                    syntaxTrees: new[] { typeSyntaxTree }, references: MetadataReferences,
+                    options: options);
+
+                using var ms = new MemoryStream();
+                var res = compilation.Emit(ms);
+
+                if (res.Success)
+                {
+                    static SeverityLevel GetSeverityLevel(DiagnosticSeverity severity)
+                        => severity switch
+                        {
+                            DiagnosticSeverity.Hidden => SeverityLevel.Debug1,
+                            DiagnosticSeverity.Info => SeverityLevel.Info,
+                            DiagnosticSeverity.Warning => SeverityLevel.Warning,
+                            DiagnosticSeverity.Error => SeverityLevel.Error,
+                            _ => throw new ArgumentOutOfRangeException(nameof(severity), severity, null)
+                        };
+
+                    foreach (var resultDiagnostic in res.Diagnostics
+                        .Where(d => !d.IsSuppressed && d.Severity != DiagnosticSeverity.Hidden)
+                        .OrderBy(d => d.Location.IsInSource ? d.Location.SourceSpan.Start : int.MaxValue))
+                        ServerLog.EReport(GetSeverityLevel(resultDiagnostic.Severity), errorMessageInternal: resultDiagnostic.ToString());
+
+                    ms.Seek(0L, SeekOrigin.Begin);
+                    var assembly = AssemblyLoadContext.GetLoadContext(typeof(CSharpCompiler).Assembly)!.LoadFromStream(ms);
+                    ms.Seek(0L, SeekOrigin.Begin);
+                    MetadataReferences.Add(MetadataReference.CreateFromStream(ms));
+                    var type = assembly.ExportedTypes.Single();
+                    return new TypeAccessInfo(type, type, compileData.MethodName, type, /* Todo: implement value creation method */ null!);
+                }
+                throw ReportCompilationFailure(res);
+            }
+            throw ServerLog.EReport(SeverityLevel.Error ,$"Cannot create a TypeAccessInfo for type '{typeInfo.GetType()}'", errorDataType: typeInfo.Oid)!;
+        }
     }
 }

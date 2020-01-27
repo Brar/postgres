@@ -1,12 +1,25 @@
 Next steps:
 
-- Implement composite type arguments
+- Add function executon to unit tests
 - Implement returning composite types
+
+
+Future:
+
+- Implement support for VARARGS arguments
+- Fix function caching
 - Implement returning sets
 - Implement support for OUT and INOUT arguments
 - Create a SPI wrapper
 - Add execute error callback
 - Generate better compiler errors, warnings and infos using ereport
-- call hostfxr_close on planned backend shutdown
-- generate PostgreSqlErrorCode values from src/include/utils/errcodes.txt
+- Call hostfxr_close on planned backend shutdown
+- Autogenerate PostgreSqlErrorCode values from src/include/utils/errcodes.txt
+- Autogenerate various system catalog related files (Servertypes, ...) from the source files
 - Unload generated assemblies when recompiling (use AssemblyLoadContext?)
+- Lock managed and unmanaged versions together
+- Implement passing and returning domains
+- Implement passing and returning arrays
+- Implement passing and returning ranges
+- Implement passing and returning pseudo types
+- Generate syntax tree via SyntaxFactory

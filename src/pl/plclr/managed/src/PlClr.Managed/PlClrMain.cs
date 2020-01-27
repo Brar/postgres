@@ -14,7 +14,7 @@ namespace PlClr
     public delegate void EReportDelegate(int level, IntPtr errorMessageInternal, IntPtr errorCode, IntPtr errorDetailInternal, IntPtr errorDetailLog, IntPtr errorHint, IntPtr errorPosition, IntPtr errorDataType);
     public delegate IntPtr PlClrMainDelegate(IntPtr args, int sizeBytes);
     public delegate IntPtr FunctionCallDelegate(NullableDatum[] values);
-
+    public delegate IntPtr GetTypeInfoDelegate(uint value);
 
     public static class PlClrMain
     {
@@ -25,14 +25,22 @@ namespace PlClr
         [StructLayout(LayoutKind.Sequential)]
         private struct PlClrUnmanagedInterface
         {
+            /* palloc functions */
             public IntPtr PAllocFunctionPtr;
             public IntPtr PAlloc0FunctionPtr;
             public IntPtr RePAllocFunctionPtr;
             public IntPtr PFreeFunctionPtr;
+
+            /* logging functions */
             public IntPtr ELogFunctionPtr;
             public IntPtr EReportFunctionPtr;
+
+            /* type I/O */
+            public IntPtr GetTypeInfoFunctionPtr;
             public IntPtr GetTextFunctionPtr;
             public IntPtr SetTextFunctionPtr;
+            public IntPtr DeToastDatumFunctionPtr;
+            public IntPtr GetAttributeByNumFunctionPtr;
         }
 
         [StructLayout(LayoutKind.Sequential)]
@@ -98,6 +106,7 @@ namespace PlClr
         /// <returns></returns>
         public static IntPtr Setup(IntPtr arg, int argLength)
         {
+            var ptr = IntPtr.Zero;
             try
             {
                 if (arg == IntPtr.Zero)
@@ -151,6 +160,11 @@ namespace PlClr
                     Console.Error.WriteLine($"Field {nameof(PlClrUnmanagedInterface.SetTextFunctionPtr)} in struct {nameof(PlClrUnmanagedInterface)} must not be NULL");
                     return IntPtr.Zero;
                 }
+                if (unmanagedInterface.GetTypeInfoFunctionPtr == IntPtr.Zero)
+                {
+                    Console.Error.WriteLine($"Field {nameof(PlClrUnmanagedInterface.GetTypeInfoFunctionPtr)} in struct {nameof(PlClrUnmanagedInterface)} must not be NULL");
+                    return IntPtr.Zero;
+                }
 
                 var palloc = System.Runtime.InteropServices.Marshal.GetDelegateForFunctionPointer<PAllocDelegate>(unmanagedInterface.PAllocFunctionPtr);
                 var palloc0 = System.Runtime.InteropServices.Marshal.GetDelegateForFunctionPointer<PAllocDelegate>(unmanagedInterface.PAlloc0FunctionPtr);
@@ -160,10 +174,13 @@ namespace PlClr
                 var ereport = System.Runtime.InteropServices.Marshal.GetDelegateForFunctionPointer<EReportDelegate>(unmanagedInterface.EReportFunctionPtr);
                 var getText = System.Runtime.InteropServices.Marshal.GetDelegateForFunctionPointer<ReferenceTypeConversionDelegate>(unmanagedInterface.GetTextFunctionPtr);
                 var setText = System.Runtime.InteropServices.Marshal.GetDelegateForFunctionPointer<ReferenceTypeConversionDelegate>(unmanagedInterface.SetTextFunctionPtr);
+                var getTypeInfo = System.Runtime.InteropServices.Marshal.GetDelegateForFunctionPointer<GetTypeInfoDelegate>(unmanagedInterface.GetTypeInfoFunctionPtr);
+                var deToastDatum = System.Runtime.InteropServices.Marshal.GetDelegateForFunctionPointer<ReferenceTypeConversionDelegate>(unmanagedInterface.DeToastDatumFunctionPtr);
+                var getAttributeByNum = System.Runtime.InteropServices.Marshal.GetDelegateForFunctionPointer<GetAttributeByNumDelegate>(unmanagedInterface.GetAttributeByNumFunctionPtr);
 
                 ServerMemory.Initialize(palloc, palloc0, repalloc, pfree);
                 ServerLog.Initialize(elog, ereport);
-                ServerFunctions.Initialize(getText, setText);
+                ServerFunctions.Initialize(getText, setText, deToastDatum, getAttributeByNum, getTypeInfo);
 
                 PlClrManagedInterface managedInterface;
                 managedInterface.CompileFunctionPtr =
@@ -172,12 +189,16 @@ namespace PlClr
                     System.Runtime.InteropServices.Marshal.GetFunctionPointerForDelegate(ExecuteDelegate);
 
                 var size = System.Runtime.InteropServices.Marshal.SizeOf<PlClrManagedInterface>();
-                var ptr = ServerMemory.Palloc((ulong)size);
+
+                // We shall not palloc here because our managed interface needs to live as long as the process lives.
+                ptr = System.Runtime.InteropServices.Marshal.AllocHGlobal(size);
                 System.Runtime.InteropServices.Marshal.StructureToPtr(managedInterface, ptr, false);
+                
                 return ptr;
             }
             catch (Exception e)
             {
+                if (ptr != IntPtr.Zero) System.Runtime.InteropServices.Marshal.FreeHGlobal(ptr);
                 Console.Error.WriteLine($"An unexpected exception occured during PL/CLR setup: {e}");
                 return IntPtr.Zero;
             }
