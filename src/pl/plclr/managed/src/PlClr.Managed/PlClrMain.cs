@@ -188,7 +188,9 @@ namespace PlClr
                     System.Runtime.InteropServices.Marshal.GetFunctionPointerForDelegate(ExecuteDelegate);
 
                 var size = System.Runtime.InteropServices.Marshal.SizeOf<PlClrManagedInterface>();
-                var ptr = ServerMemory.Palloc((ulong)size);
+
+                // We shall not palloc here because our managed interface needs to live as long as the process lives.
+                var ptr = System.Runtime.InteropServices.Marshal.AllocHGlobal(size);
                 System.Runtime.InteropServices.Marshal.StructureToPtr(managedInterface, ptr, false);
                 
                 return ptr;
