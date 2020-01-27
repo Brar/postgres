@@ -29,12 +29,23 @@ int utf8_get_required_utf16le_buffer_size(char* utf8_string)
 #endif
 
 clr_char*
-server_encoding_to_clr_char(const char *input)
+server_encoding_to_clr_char(const char *input, int length)
 {
 	int			db_encoding = GetDatabaseEncoding();
-	size_t		input_length = strlen(input);
-	size_t		output_length = input_length;
+	size_t		input_length;
+	size_t		output_length;
 	clr_char*	output;
+
+	if (length >= 0)
+	{
+		input_length = length;
+	}
+	else
+	{
+		input_length = strlen(input);
+	}
+
+	output_length = input_length;
 
 #ifdef WIN32
 	unsigned	codepage;
