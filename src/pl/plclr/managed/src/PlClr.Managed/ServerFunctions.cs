@@ -1,13 +1,12 @@
 ﻿using System;
 using System.Runtime.InteropServices;
-using static PlClr.Globals;
 
 namespace PlClr
 {
     public delegate IntPtr ReferenceTypeConversionDelegate(IntPtr argPtr);
     public delegate IntPtr GetAttributeByNumDelegate(IntPtr argPtr, short attNo, out bool isNull);
 
-    public class ServerFunctions
+    public static class ServerFunctions
     {
         #region private structs for marshalling
 
@@ -50,13 +49,13 @@ namespace PlClr
 
         #endregion
 
-        private readonly ReferenceTypeConversionDelegate _getTextDelegate;
-        private readonly ReferenceTypeConversionDelegate _setTextDelegate;
-        private readonly ReferenceTypeConversionDelegate _deToastDatumDelegate;
-        private readonly GetAttributeByNumDelegate _getAttributeByNumDelegate;
-        private readonly GetTypeInfoDelegate _getTypeInfoDelegate;
+        private static ReferenceTypeConversionDelegate _getTextDelegate = null!;
+        private static ReferenceTypeConversionDelegate _setTextDelegate = null!;
+        private static ReferenceTypeConversionDelegate _deToastDatumDelegate = null!;
+        private static GetAttributeByNumDelegate _getAttributeByNumDelegate = null!;
+        private static GetTypeInfoDelegate _getTypeInfoDelegate = null!;
 
-        internal ServerFunctions(
+        internal static void Initialize(
             ReferenceTypeConversionDelegate getTextDelegate,
             ReferenceTypeConversionDelegate setTextDelegate,
             ReferenceTypeConversionDelegate deToastDatumDelegate,
@@ -73,29 +72,38 @@ namespace PlClr
 
         private static readonly IntPtr One = new IntPtr(1);
 
-        public bool GetBool(IntPtr datum) => datum != IntPtr.Zero;
-        public IntPtr GetDatum(bool value) => value ? One : IntPtr.Zero;
+        public static bool DatumGetBool(IntPtr datum) => datum != IntPtr.Zero;
+        public static IntPtr BoolGetDatum(bool value) => value ? One : IntPtr.Zero;
 
-        public byte GetByte(IntPtr datum) => (byte) datum;
-        public IntPtr GetDatum(byte value) => (IntPtr)value;
+        public static byte DatumGetByte(IntPtr datum) => (byte) datum;
+        public static IntPtr ByteGetDatum(byte value) => (IntPtr)value;
 
-        public short GetInt16(IntPtr datum) => (short) datum;
-        public IntPtr GetDatum(short value) => (IntPtr)value;
+        public static short DatumGetInt16(IntPtr datum) => (short) datum;
+        public static IntPtr Int16GetDatum(short value) => (IntPtr)value;
 
-        public int GetInt32(IntPtr datum) => (int) datum;
-        public IntPtr GetDatum(int value) => (IntPtr)value;
+        public static int DatumGetInt32(IntPtr datum) => (int) datum;
+        public static IntPtr Int32GetDatum(int value) => (IntPtr)value;
 
-        public long GetInt64(IntPtr datum) => (long) datum;
-        public IntPtr GetDatum(long value) => (IntPtr)value;
+        public static long DatumGetInt64(IntPtr datum) => (long) datum;
+        public static IntPtr Int64GetDatum(long value) => (IntPtr)value;
 
-        public string GetText(IntPtr datum) => Marshal.ToStringPFree(_getTextDelegate!(datum))!;
-        public IntPtr TextGetDatum(string value) => _setTextDelegate!(Marshal.ToPtrPalloc(value));
+        public static uint DatumGetUInt32(IntPtr datum) => (uint) datum;
+        public static IntPtr UInt32GetDatum(uint value) => (IntPtr)value;
 
-        public IntPtr DeToastDatum(IntPtr datum) => _deToastDatumDelegate!(datum);
+        public static float DatumGetSingle(IntPtr datum) => (float) datum;
+        public static IntPtr SingleGetDatum(float value) => (IntPtr)value;
 
-        public IntPtr GetAttributeByNum(IntPtr heapTupleHeader, short attNo, out bool isNull) => _getAttributeByNumDelegate!(heapTupleHeader, attNo, out isNull);
+        public static double DatumGetDouble(IntPtr datum) => (double) datum;
+        public static IntPtr DoubleGetDatum(double value) => (IntPtr)value;
 
-        public TypeInfo GetTypeInfo(uint oid)
+        public static string DatumGetText(IntPtr datum) => Marshal.ToStringPFree(_getTextDelegate!(datum))!;
+        public static IntPtr TextGetDatum(string value) => _setTextDelegate!(Marshal.ToPtrPalloc(value));
+
+        public static IntPtr DeToastDatum(IntPtr datum) => _deToastDatumDelegate!(datum);
+
+        public static IntPtr GetAttributeByNum(IntPtr heapTupleHeader, short attNo, out bool isNull) => _getAttributeByNumDelegate!(heapTupleHeader, attNo, out isNull);
+
+        public static TypeInfo GetTypeInfo(uint oid)
         {
             var tiPtr = _getTypeInfoDelegate!(oid);
             var typeInfo = System.Runtime.InteropServices.Marshal.PtrToStructure<TypeInfoPrivate>(tiPtr);
@@ -140,7 +148,7 @@ namespace PlClr
                         retVal[i] = new AttributeInfo(
                             attributeName,
                             attributeInfo.attnum,
-                            BackendFunctions.GetTypeInfo(attributeInfo.atttypid),
+                            ServerTypes.GetTypeInfo(attributeInfo.atttypid),
                             attributeInfo.attnotnull
                         );
                     }

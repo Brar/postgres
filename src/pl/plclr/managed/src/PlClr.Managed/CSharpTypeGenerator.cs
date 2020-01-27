@@ -1,36 +1,26 @@
-﻿using System.Collections.Generic;
-using System.Globalization;
-using System.Linq;
-using Microsoft.CodeAnalysis;
+﻿using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
-using Microsoft.CodeAnalysis.Diagnostics;
+using System.Collections.Generic;
+using System.Globalization;
 using static Microsoft.CodeAnalysis.CSharp.SyntaxFactory;
-using static PlClr.Globals;
 
 namespace PlClr
 {
-    public static class CSharpTypeGenerator
+    internal static class CSharpTypeGenerator
     {
         private static readonly SyntaxList<UsingDirectiveSyntax> UsingDirectives = List(
             new[]
             {
                 UsingDirective(
-                    IdentifierName("System")),
-                UsingDirective(
-                        QualifiedName(
-                            IdentifierName(nameof(PlClr)),
-                            IdentifierName(nameof(Globals))))
-                    .WithStaticKeyword(
-                        Token(SyntaxKind.StaticKeyword))
+                    IdentifierName("System"))
             });
 
-        public static CompilationUnitSyntax GetCompilationUnit(CompositeTypeInfo compositeTypeInfo, out string valueAccessMethod)
+        public static CSharpCompileData GetCompileData(CompositeTypeInfo compositeTypeInfo)
         {
             var oidString = compositeTypeInfo.Oid.ToString(CultureInfo.InvariantCulture);
             var className = "PlClrTypeForOid_" + oidString;
             var methodName = "Get_" + oidString;
-            valueAccessMethod = $"{className}.{methodName}";
             var heapTupleHeaderVariableName = "heapTupleHeader";
             var localPointerVariableSuffix = "Ptr";
             var localBoolVariableSuffix = "IsNull";
@@ -73,7 +63,7 @@ namespace PlClr
             var methodArgumentName = "datum";
             classMembers.Add(GetMethodDeclaration(className, methodName, methodArgumentName, GetMethodBodyStatements(className, heapTupleHeaderVariableName, methodArgumentName, localVariableAssignmentList, constructorInvokationList)));
 
-            return CompilationUnit(
+            var compilatonUnit = CompilationUnit(
                     default,
                     UsingDirectives,
                     default,
@@ -82,6 +72,7 @@ namespace PlClr
                             GetClassDeclaration(className, classMembers))),
                     Token(SyntaxKind.EndOfFileToken))
                 .NormalizeWhitespace();
+            return new CSharpCompileData(className, methodName, compilatonUnit);
         }
 
         private static LocalDeclarationStatementSyntax GetMethodLocalVariableAssignment(string heapTupleHeaderVariableName, string localPointerVariableSuffix, string localBoolVariableSuffix, AttributeInfo attribute)
@@ -97,8 +88,8 @@ namespace PlClr
                                 InvocationExpression(
                                     MemberAccessExpression(
                                         SyntaxKind.SimpleMemberAccessExpression,
-                                        IdentifierName(nameof(BackendFunctions)),
-                                        IdentifierName(nameof(BackendFunctions.GetAttributeByNum))),
+                                        IdentifierName(nameof(ServerFunctions)),
+                                        IdentifierName(nameof(ServerFunctions.GetAttributeByNum))),
                                     ArgumentList(
                                         SeparatedList<ArgumentSyntax>(
                                             new SyntaxNodeOrToken[]
@@ -124,22 +115,22 @@ namespace PlClr
 
         private static ArgumentSyntax GetConstructorInvocationParameter(string heapTupleHeaderVariableName, string localPointerVariableSuffix, string localBoolVariableSuffix, AttributeInfo attribute)
         {
-            var typeOid = attribute.Type.Oid;
+            var attributeTypeAccessInfo = ServerTypes.GeTypeAccessInfo(attribute.Type.Oid);
             if (attribute.NotNull)
                 return Argument(
                     InvocationExpression(
                         MemberAccessExpression(
                             SyntaxKind.SimpleMemberAccessExpression,
-                            IdentifierName(nameof(BackendFunctions)),
-                            IdentifierName(ServerTypes.GetValueAccessMethodForOid(typeOid))),
+                            IdentifierName(attributeTypeAccessInfo.AccessMethodType.Name),
+                            IdentifierName(attributeTypeAccessInfo.AccessMethodName)),
                         ArgumentList(
                             SingletonSeparatedList(
                                 Argument(
                                     InvocationExpression(
                                         MemberAccessExpression(
                                             SyntaxKind.SimpleMemberAccessExpression,
-                                            IdentifierName(nameof(BackendFunctions)),
-                                            IdentifierName(nameof(BackendFunctions.GetAttributeByNum))),
+                                            IdentifierName(nameof(ServerFunctions)),
+                                            IdentifierName(nameof(ServerFunctions.GetAttributeByNum))),
                                         ArgumentList(
                                             SeparatedList<ArgumentSyntax>(
                                                 new SyntaxNodeOrToken[]
@@ -154,14 +145,14 @@ namespace PlClr
             return Argument(
                 ConditionalExpression(
                     IdentifierName(attribute.Name + localBoolVariableSuffix),
-                    ServerTypes.GetTypeForOid(attribute.Type.Oid).IsValueType
-                        ? (ExpressionSyntax) CastExpression(GetTypeSyntax(typeOid, false), LiteralExpression(SyntaxKind.NullLiteralExpression))
+                    attributeTypeAccessInfo.MappedType.IsValueType
+                        ? (ExpressionSyntax) CastExpression(GetTypeSyntax(attribute.Type.Oid, false), LiteralExpression(SyntaxKind.NullLiteralExpression))
                         : LiteralExpression(SyntaxKind.NullLiteralExpression),
                     InvocationExpression(
                         MemberAccessExpression(
                             SyntaxKind.SimpleMemberAccessExpression,
-                            IdentifierName(nameof(BackendFunctions)),
-                            IdentifierName(ServerTypes.GetValueAccessMethodForOid(typeOid))),
+                            IdentifierName(attributeTypeAccessInfo.AccessMethodType.Name),
+                            IdentifierName(attributeTypeAccessInfo.AccessMethodName)),
                         ArgumentList(
                             SingletonSeparatedList(
                                 Argument(IdentifierName(attribute.Name + localPointerVariableSuffix))))
@@ -200,8 +191,8 @@ namespace PlClr
                                         InvocationExpression(
                                                 MemberAccessExpression(
                                                     SyntaxKind.SimpleMemberAccessExpression,
-                                                    IdentifierName(nameof(BackendFunctions)),
-                                                    IdentifierName(nameof(BackendFunctions.DeToastDatum))))
+                                                    IdentifierName(nameof(ServerFunctions)),
+                                                    IdentifierName(nameof(ServerFunctions.DeToastDatum))))
                                             .WithArgumentList(ArgumentList(SingletonSeparatedList(Argument(IdentifierName(methodArgumentName))))))))))
             };
             statements.AddRange(localVariableAssignmentList);
@@ -337,7 +328,7 @@ namespace PlClr
                     baseTypeSyntax = PredefinedType(Token(SyntaxKind.StringKeyword));
                     break;
                 default:
-                    var parts = ServerTypes.GetTypeForOid(typeOid).FullName!.Split('.');
+                    var parts = ServerTypes.GeTypeAccessInfo(typeOid).MappedType.FullName!.Split('.');
                     if (parts.Length == 1)
                     {
                         baseTypeSyntax = IdentifierName(parts[0]);

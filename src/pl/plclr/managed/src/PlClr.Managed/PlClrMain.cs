@@ -2,7 +2,6 @@
 using System.Collections.Generic;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
-using static PlClr.Globals;
 
 [assembly: InternalsVisibleTo("PlClr.Managed.Tests")]
 
@@ -180,7 +179,7 @@ namespace PlClr
 
                 ServerMemory.Initialize(palloc, palloc0, repalloc, pfree);
                 ServerLog.Initialize(elog, ereport);
-                BackendFunctions = new ServerFunctions(getText, setText, deToastDatum, getAttributeByNum, getTypeInfo);
+                ServerFunctions.Initialize(getText, setText, deToastDatum, getAttributeByNum, getTypeInfo);
 
                 PlClrManagedInterface managedInterface;
                 managedInterface.CompileFunctionPtr =
