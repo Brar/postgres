@@ -1,7 +1,5 @@
 Next steps:
 
-- Fix the problem that Windows needs to run CREATE extension whereas Linux already has the extension installed, leading to regession test failures
-- Fix unit tests
 - Make unit tests run on windows as part of vcregress plcheck
 - Add function executon to unit tests
 - Implement returning composite types
