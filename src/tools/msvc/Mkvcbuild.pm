@@ -261,7 +261,7 @@ sub mkvcbuild
 		# Reject unsupported .NET Core versions as soon as practical.
 		die ".NET Core version $dotnet_sdk_version is too old (version 3.0 or later is required!\n" if $dotnet_sdk_majorversion < 3;
 
-		my $dotnet_runtime_version = `$dotnet --list-runtimes` =~ s/^.*Microsoft\.NETCore\.App\s*($dotnet_sdk_majorversion\.$dotnet_sdk_minorversion\.[0-9]+).*$/$1/rs;
+		my $dotnet_runtime_version = `$dotnet --list-runtimes` =~ s/^.*Microsoft\.NETCore\.App\s*($dotnet_sdk_majorversion\.$dotnet_sdk_minorversion\.[0-9]+[^ ]+).*$/$1/rs;
 		my $dotnet_runtime_majorversion = $dotnet_runtime_version =~ s/^([0-9]+).*$/$1/r;
 		my $dotnet_runtime_minorversion = $dotnet_runtime_version =~ s/^[0-9]+\.([0-9]+).*$/$1/r;
 		my $dotnet_runtime_patch = $dotnet_runtime_version =~ s/^[0-9]+\.[0-9]+\.([0-9]+).*$/$1/r;
