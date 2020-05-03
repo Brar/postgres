@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Diagnostics;
 using System.Runtime.InteropServices;
 
 namespace PlClr
@@ -35,6 +36,10 @@ namespace PlClr
             public IntPtr nspname;
             public IntPtr typclass;
             public uint oid;
+            public uint xmin;
+            public ushort ip_blkid_bi_hi;
+            public ushort ip_blkid_bi_lo;
+            public ushort ip_posid;
             public uint typarray;
             public uint typelem;
             public uint typbasetype;
@@ -54,13 +59,15 @@ namespace PlClr
         private static ReferenceTypeConversionDelegate _deToastDatumDelegate = null!;
         private static GetAttributeByNumDelegate _getAttributeByNumDelegate = null!;
         private static GetTypeInfoDelegate _getTypeInfoDelegate = null!;
+        private static RefreshTypeInfoDelegate _refreshTypeInfoDelegate = null!;
 
         internal static void Initialize(
             ReferenceTypeConversionDelegate getTextDelegate,
             ReferenceTypeConversionDelegate setTextDelegate,
             ReferenceTypeConversionDelegate deToastDatumDelegate,
             GetAttributeByNumDelegate getAttributeByNumDelegate,
-            GetTypeInfoDelegate getTypeInfoDelegate
+            GetTypeInfoDelegate getTypeInfoDelegate,
+            RefreshTypeInfoDelegate refreshTypeInfoDelegate
         )
         {
             _getTextDelegate = getTextDelegate;
@@ -68,6 +75,7 @@ namespace PlClr
             _deToastDatumDelegate = deToastDatumDelegate;
             _getAttributeByNumDelegate = getAttributeByNumDelegate;
             _getTypeInfoDelegate = getTypeInfoDelegate;
+            _refreshTypeInfoDelegate = refreshTypeInfoDelegate;
         }
 
         private static readonly IntPtr One = new IntPtr(1);
@@ -103,42 +111,64 @@ namespace PlClr
 
         public static IntPtr GetAttributeByNum(IntPtr heapTupleHeader, short attNo, out bool isNull) => _getAttributeByNumDelegate!(heapTupleHeader, attNo, out isNull);
 
+        public static bool TryRefreshTypeInfo(ref TypeInfo typeInfo)
+        {
+            Debug.Assert(typeInfo != null);
+            var tiPtr = _refreshTypeInfoDelegate(typeInfo.Oid, typeInfo.XMin, typeInfo.ItemPointerBlockIdHigh, typeInfo.ItemPointerBlockIdLow, typeInfo.ItemPointerOffsetNumber);
+            if (tiPtr == IntPtr.Zero)
+                return false;
+
+            typeInfo = GetTypeInfoFromPointer(tiPtr);
+            return true;
+        }
+
         public static TypeInfo GetTypeInfo(uint oid)
         {
             var tiPtr = _getTypeInfoDelegate!(oid);
+            return GetTypeInfoFromPointer(tiPtr);
+        }
+
+        private static unsafe TypeInfo GetTypeInfoFromPointer(IntPtr tiPtr)
+        {
+            Debug.Assert(tiPtr != IntPtr.Zero);
             var typeInfo = System.Runtime.InteropServices.Marshal.PtrToStructure<TypeInfoPrivate>(tiPtr);
 
             var typeName = Marshal.ToStringPFree(typeInfo.typname)!;
             var namespaceName = Marshal.ToStringPFree(typeInfo.nspname)!;
             switch (typeInfo.typtype)
             {
-                case (byte)'b':
-                case (byte)'p':
-                    return new TypeInfo(typeInfo.oid, typeName, namespaceName, typeInfo.typlen, typeInfo.typbyval);
-                case (byte)'c':
+                case (byte) 'b':
+                case (byte) 'p':
+                    return new TypeInfo(typeInfo.oid, typeInfo.xmin, typeInfo.ip_blkid_bi_hi, typeInfo.ip_blkid_bi_lo,
+                        typeInfo.ip_posid, typeName, namespaceName, typeInfo.typlen, typeInfo.typbyval);
+                case (byte) 'c':
                     return GetCompositeTypeInfo(in typeInfo, typeName, namespaceName);
-                case (byte)'d':
+                case (byte) 'd':
                     throw ServerLog.EReport(SeverityLevel.Error, "Domain types are currently not supported by PL/CLR.",
-                        errorDataType: oid)!;
-                case (byte)'e':
+                        errorDataType: typeInfo.oid)!;
+                case (byte) 'e':
                     throw ServerLog.EReport(SeverityLevel.Error, "Enum types are currently not supported by PL/CLR.",
-                        errorDataType: oid)!;
+                        errorDataType: typeInfo.oid)!;
                 default:
-                    throw ServerLog.EReport(SeverityLevel.Error, $"Unknown kind of type {typeInfo.typtype} in type {typeInfo.typname}.",
-                        errorDataType: oid)!;
+                    throw ServerLog.EReport(SeverityLevel.Error,
+                        $"Unknown kind of type {typeInfo.typtype} in type {typeInfo.typname}.",
+                        errorDataType: typeInfo.oid)!;
             }
 
             static CompositeTypeInfo GetCompositeTypeInfo(in TypeInfoPrivate typeInfo, string typeName, string namespaceName)
             {
                 var classInfo = System.Runtime.InteropServices.Marshal.PtrToStructure<ClassInfoPrivate>(typeInfo.typclass);
 
-                return new CompositeTypeInfo(typeInfo.oid, typeName, namespaceName, typeInfo.typlen, typeInfo.typbyval, GetAttributeInfos(classInfo));
+                return new CompositeTypeInfo(typeInfo.oid, typeInfo.xmin, typeInfo.ip_blkid_bi_hi, typeInfo.ip_blkid_bi_lo,
+                    typeInfo.ip_posid, typeName, namespaceName, typeInfo.typlen, typeInfo.typbyval,
+                    GetAttributeInfos(classInfo));
 
                 static unsafe AttributeInfo[] GetAttributeInfos(ClassInfoPrivate classInfoPrivate)
                 {
                     var attributeInfos = new AttributeInfoPrivate[classInfoPrivate.relnatts];
-                    new ReadOnlySpan<AttributeInfoPrivate>((void*) classInfoPrivate.relattributes, classInfoPrivate.relnatts).CopyTo(
-                        attributeInfos);
+                    new ReadOnlySpan<AttributeInfoPrivate>((void*) classInfoPrivate.relattributes, classInfoPrivate.relnatts)
+                        .CopyTo(
+                            attributeInfos);
 
                     var retVal = new AttributeInfo[classInfoPrivate.relnatts];
                     for (var i = 0; i < classInfoPrivate.relnatts; i++)

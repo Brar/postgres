@@ -44,6 +44,10 @@ typedef struct PlClrTypeInfo
     clr_char* nspname;
 	PlClrClassInfoPtr typclass;
     Oid oid;
+    TransactionId xmin;
+	uint16 ip_blkid_bi_hi;
+	uint16 ip_blkid_bi_lo;
+	uint16 ip_posid;
 	Oid typarray;
 	Oid typelem;
 	Oid typbasetype;
@@ -70,6 +74,7 @@ typedef struct PlClrUnmanagedInterface
 	
 	/* type I/O */
 	PlClrTypeInfoPtr (*GetTypeInfoFunctionPtr)(Oid);
+	PlClrTypeInfoPtr (*RefreshTypeInfoFunctionPtr)(Oid oid, TransactionId xmin, uint16 ip_blkid_bi_hi, uint16 ip_blkid_bi_lo, uint16 ip_posid);
 	void* (*GetTextFunctionPtr)(Datum);
 	Datum (*SetTextFunctionPtr)(char*);
 	struct varlena* (*DeToastDatumFunctionPtr)(struct varlena* datum);
@@ -87,6 +92,7 @@ static void plclr_ereport(int elevel, const char* errmsg_internal_value, int* er
 static void* plclr_get_text(Datum);
 static Datum plclr_set_text(char* utf8String);
 static PlClrTypeInfoPtr plclr_get_type_info(Oid typeOid);
+static PlClrTypeInfoPtr plclr_refresh_type_info(Oid typeOid, TransactionId xmin, uint16 ip_blkid_bi_hi, uint16 ip_blkid_bi_lo, uint16 ip_posid);
 
 /* Globals to hold managed exports */
 static hostfxr_close_fn hostfxr_close;
@@ -190,6 +196,7 @@ plclr_runtime_host_init(void)
 	setupInfo->GetTextFunctionPtr = plclr_get_text;
 	setupInfo->SetTextFunctionPtr = plclr_set_text;
 	setupInfo->GetTypeInfoFunctionPtr = plclr_get_type_info;
+	setupInfo->RefreshTypeInfoFunctionPtr = plclr_refresh_type_info;
 	setupInfo->DeToastDatumFunctionPtr = pg_detoast_datum;
 	setupInfo->GetAttributeByNumFunctionPtr = GetAttributeByNum;
 
@@ -364,10 +371,8 @@ plclr_set_text(char* utf8String)
 	return (Datum)outputText;
 }
 
-static PlClrTypeInfoPtr
-plclr_get_type_info(Oid typeOid)
+static PlClrTypeInfoPtr get_type_info(HeapTuple	typeTup)
 {
-	HeapTuple	typeTup;
 	Form_pg_type typeStruct;
 	HeapTuple	nsTup;
 	Form_pg_namespace nsStruct;
@@ -376,16 +381,16 @@ plclr_get_type_info(Oid typeOid)
 	HeapTuple	attributeTup;
 	Form_pg_attribute attributeStruct;
 	PlClrTypeInfoPtr typeInfo;
-	
-	typeTup = SearchSysCache1(TYPEOID, ObjectIdGetDatum(typeOid));
-	if (!HeapTupleIsValid(typeTup))
-		elog(ERROR, "cache lookup failed for type %u", typeOid);
 
 	typeStruct = (Form_pg_type) GETSTRUCT(typeTup);
 
 	typeInfo = (PlClrTypeInfoPtr)palloc(sizeof(PlClrTypeInfo));
 	typeInfo->typname = server_encoding_to_clr_char(NameStr(typeStruct->typname), -1);
 	typeInfo->oid = typeStruct->oid;
+	typeInfo->xmin = HeapTupleHeaderGetRawXmin(typeTup->t_data);
+	typeInfo->ip_blkid_bi_hi = typeTup->t_self.ip_blkid.bi_hi;
+	typeInfo->ip_blkid_bi_lo = typeTup->t_self.ip_blkid.bi_lo;
+	typeInfo->ip_posid = typeTup->t_self.ip_posid;
 	typeInfo->typarray = typeStruct->typarray;
 	typeInfo->typelem = typeStruct->typelem;
 	typeInfo->typbasetype = typeStruct->typbasetype;
@@ -440,7 +445,47 @@ plclr_get_type_info(Oid typeOid)
 		typeInfo->typclass = NULL;
 		break;
 	}
+
+	return typeInfo;
+}
+
+static PlClrTypeInfoPtr
+plclr_refresh_type_info(Oid typeOid, TransactionId xmin, uint16 ip_blkid_bi_hi, uint16 ip_blkid_bi_lo, uint16 ip_posid)
+{
+	HeapTuple	typeTup;
+	PlClrTypeInfoPtr typeInfo;
+
+	typeTup = SearchSysCache1(TYPEOID, ObjectIdGetDatum(typeOid));
+	if (!HeapTupleIsValid(typeTup))
+		elog(ERROR, "cache lookup failed for type %u", typeOid);
+
+	AssertMacro(ItemPointerIsValid(typeTup->t_self));
+
+	if (xmin == HeapTupleHeaderGetRawXmin(typeTup->t_data)
+		&& ip_blkid_bi_hi == typeTup->t_self.ip_blkid.bi_hi
+		&& ip_blkid_bi_lo == typeTup->t_self.ip_blkid.bi_lo
+		&& ip_posid == typeTup->t_self.ip_posid)
+	{
+		ReleaseSysCache(typeTup);
+		return NULL;
+	}
+
+	typeInfo = get_type_info(typeTup);
+	ReleaseSysCache(typeTup);
+	return typeInfo;
+}
+
+static PlClrTypeInfoPtr
+plclr_get_type_info(Oid typeOid)
+{
+	HeapTuple	typeTup;
+	PlClrTypeInfoPtr typeInfo;
 	
+	typeTup = SearchSysCache1(TYPEOID, ObjectIdGetDatum(typeOid));
+	if (!HeapTupleIsValid(typeTup))
+		elog(ERROR, "cache lookup failed for type %u", typeOid);
+
+	typeInfo = get_type_info(typeTup);
 	ReleaseSysCache(typeTup);
 	return typeInfo;
 }

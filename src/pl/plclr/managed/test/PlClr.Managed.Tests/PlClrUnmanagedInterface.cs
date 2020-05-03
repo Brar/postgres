@@ -18,6 +18,7 @@ namespace PlClr.Managed.Tests
 
         /* type I/O */
         public IntPtr GetTypeInfoFunctionPtr;
+        public IntPtr RefreshTypeInfoFunctionPtr;
         public IntPtr GetTextFunctionPtr;
         public IntPtr SetTextFunctionPtr;
         public IntPtr DeToastDatumFunctionPtr;

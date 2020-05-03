@@ -117,6 +117,7 @@ namespace PlClr.Managed.Tests
             i.EReportFunctionPtr = Log.GetEReportFunctionPointer();
 
             i.GetTypeInfoFunctionPtr = Types.GetGetTypeInfoFunctionPtr();
+            i.RefreshTypeInfoFunctionPtr = Types.GetRefreshTypeInfoFunctionPtr();
             i.GetTextFunctionPtr = Function.GetGetTextFunctionPointer();
             i.SetTextFunctionPtr = Function.GetSetTextFunctionPointer();
             i.DeToastDatumFunctionPtr = FunctionCall.GetDeToastDatumFunctionPointer();

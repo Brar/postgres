@@ -5,9 +5,13 @@ namespace PlClr
 {
     public class TypeInfo
     {
-        public TypeInfo(uint oid, string name, string ns, short length, bool isPassedByValue)
+        public TypeInfo(uint oid, uint xMin, ushort itemPointerBlockIdHigh, ushort itemPointerBlockIdLow, ushort itemPointerOffsetNumber, string name, string ns, short length, bool isPassedByValue)
         {
             Oid = oid;
+            XMin = xMin;
+            ItemPointerBlockIdHigh = itemPointerBlockIdHigh;
+            ItemPointerBlockIdLow = itemPointerBlockIdLow;
+            ItemPointerOffsetNumber = itemPointerOffsetNumber;
             Name = name;
             Namespace = ns;
             Length = length;
@@ -15,6 +19,10 @@ namespace PlClr
         }
 
         public uint Oid { get; }
+        public uint XMin { get; }
+        public ushort ItemPointerBlockIdHigh { get; }
+        public ushort ItemPointerBlockIdLow { get; }
+        public ushort ItemPointerOffsetNumber { get; }
         public string Name { get; }
         public string Namespace { get; }
         public short Length { get; }
@@ -39,7 +47,8 @@ namespace PlClr
 
     public class CompositeTypeInfo : TypeInfo
     {
-        public CompositeTypeInfo(uint oid, string name, string ns, short length, bool isPassedByValue, IEnumerable<AttributeInfo> attributes) : base(oid, name, ns, length, isPassedByValue)
+        public CompositeTypeInfo(uint oid, uint xMin, ushort itemPointerBlockIdHigh, ushort itemPointerBlockIdLow, ushort itemPointerOffsetNumber, string name, string ns, short length, bool isPassedByValue, IEnumerable<AttributeInfo> attributes)
+            : base(oid, xMin, itemPointerBlockIdHigh, itemPointerBlockIdLow, itemPointerOffsetNumber, name, ns, length, isPassedByValue)
         {
             Attributes = attributes.ToImmutableArray();
         }

@@ -73,6 +73,7 @@ namespace PlClr.Managed.Tests
             i.ELogFunctionPtr = h.Log.GetELogFunctionPointer();
             i.EReportFunctionPtr = h.Log.GetEReportFunctionPointer();
             i.GetTypeInfoFunctionPtr = h.Types.GetGetTypeInfoFunctionPtr();
+            i.RefreshTypeInfoFunctionPtr = h.Types.GetRefreshTypeInfoFunctionPtr();
             i.GetTextFunctionPtr = h.Function.GetGetTextFunctionPointer();
             i.SetTextFunctionPtr = h.Function.GetSetTextFunctionPointer();
             i.DeToastDatumFunctionPtr = h.FunctionCall.GetDeToastDatumFunctionPointer();
@@ -101,6 +102,7 @@ namespace PlClr.Managed.Tests
             i.ELogFunctionPtr = h.Log.GetELogFunctionPointer();
             i.EReportFunctionPtr = h.Log.GetEReportFunctionPointer();
             i.GetTypeInfoFunctionPtr = h.Types.GetGetTypeInfoFunctionPtr();
+            i.RefreshTypeInfoFunctionPtr = h.Types.GetRefreshTypeInfoFunctionPtr();
             i.GetTextFunctionPtr = h.Function.GetGetTextFunctionPointer();
             i.SetTextFunctionPtr = h.Function.GetSetTextFunctionPointer();
             i.DeToastDatumFunctionPtr = h.FunctionCall.GetDeToastDatumFunctionPointer();
@@ -129,6 +131,7 @@ namespace PlClr.Managed.Tests
             i.ELogFunctionPtr = h.Log.GetELogFunctionPointer();
             i.EReportFunctionPtr = h.Log.GetEReportFunctionPointer();
             i.GetTypeInfoFunctionPtr = h.Types.GetGetTypeInfoFunctionPtr();
+            i.RefreshTypeInfoFunctionPtr = h.Types.GetRefreshTypeInfoFunctionPtr();
             i.GetTextFunctionPtr = h.Function.GetGetTextFunctionPointer();
             i.SetTextFunctionPtr = h.Function.GetSetTextFunctionPointer();
             i.DeToastDatumFunctionPtr = h.FunctionCall.GetDeToastDatumFunctionPointer();
@@ -157,6 +160,7 @@ namespace PlClr.Managed.Tests
             i.ELogFunctionPtr = h.Log.GetELogFunctionPointer();
             i.EReportFunctionPtr = h.Log.GetEReportFunctionPointer();
             i.GetTypeInfoFunctionPtr = h.Types.GetGetTypeInfoFunctionPtr();
+            i.RefreshTypeInfoFunctionPtr = h.Types.GetRefreshTypeInfoFunctionPtr();
             i.GetTextFunctionPtr = h.Function.GetGetTextFunctionPointer();
             i.SetTextFunctionPtr = h.Function.GetSetTextFunctionPointer();
             i.DeToastDatumFunctionPtr = h.FunctionCall.GetDeToastDatumFunctionPointer();
@@ -185,6 +189,7 @@ namespace PlClr.Managed.Tests
             i.ELogFunctionPtr = IntPtr.Zero;
             i.EReportFunctionPtr = h.Log.GetEReportFunctionPointer();
             i.GetTypeInfoFunctionPtr = h.Types.GetGetTypeInfoFunctionPtr();
+            i.RefreshTypeInfoFunctionPtr = h.Types.GetRefreshTypeInfoFunctionPtr();
             i.GetTextFunctionPtr = h.Function.GetGetTextFunctionPointer();
             i.SetTextFunctionPtr = h.Function.GetSetTextFunctionPointer();
             i.DeToastDatumFunctionPtr = h.FunctionCall.GetDeToastDatumFunctionPointer();

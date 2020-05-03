@@ -18,6 +18,13 @@ namespace PlClr.Managed.Tests
             return IntPtr.Zero;
         }
 
+        IntPtr RefreshTypeInfo(uint oid, uint xMin, ushort itemPointerBlockIdHigh, ushort itemPointerBlockIdLow, ushort itemPointerOffsetNumber)
+        {
+            return IntPtr.Zero;
+        }
+
         public IntPtr GetGetTypeInfoFunctionPtr() => System.Runtime.InteropServices.Marshal.GetFunctionPointerForDelegate<GetTypeInfoDelegate>(GetTypeInfo);
+
+        public IntPtr GetRefreshTypeInfoFunctionPtr() => System.Runtime.InteropServices.Marshal.GetFunctionPointerForDelegate<RefreshTypeInfoDelegate>(RefreshTypeInfo);
     }
 }

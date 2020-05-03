@@ -14,7 +14,8 @@ namespace PlClr
     public delegate void EReportDelegate(int level, IntPtr errorMessageInternal, IntPtr errorCode, IntPtr errorDetailInternal, IntPtr errorDetailLog, IntPtr errorHint, IntPtr errorPosition, IntPtr errorDataType);
     public delegate IntPtr PlClrMainDelegate(IntPtr args, int sizeBytes);
     public delegate IntPtr FunctionCallDelegate(NullableDatum[] values);
-    public delegate IntPtr GetTypeInfoDelegate(uint value);
+    public delegate IntPtr GetTypeInfoDelegate(uint oid);
+    public delegate IntPtr RefreshTypeInfoDelegate(uint oid, uint xMin, ushort itemPointerBlockIdHigh, ushort itemPointerBlockIdLow, ushort itemPointerOffsetNumber);
 
     public static class PlClrMain
     {
@@ -37,6 +38,7 @@ namespace PlClr
 
             /* type I/O */
             public IntPtr GetTypeInfoFunctionPtr;
+            public IntPtr RefreshTypeInfoFunctionPtr;
             public IntPtr GetTextFunctionPtr;
             public IntPtr SetTextFunctionPtr;
             public IntPtr DeToastDatumFunctionPtr;
@@ -175,12 +177,13 @@ namespace PlClr
                 var getText = System.Runtime.InteropServices.Marshal.GetDelegateForFunctionPointer<ReferenceTypeConversionDelegate>(unmanagedInterface.GetTextFunctionPtr);
                 var setText = System.Runtime.InteropServices.Marshal.GetDelegateForFunctionPointer<ReferenceTypeConversionDelegate>(unmanagedInterface.SetTextFunctionPtr);
                 var getTypeInfo = System.Runtime.InteropServices.Marshal.GetDelegateForFunctionPointer<GetTypeInfoDelegate>(unmanagedInterface.GetTypeInfoFunctionPtr);
+                var refreshTypeInfo = System.Runtime.InteropServices.Marshal.GetDelegateForFunctionPointer<RefreshTypeInfoDelegate>(unmanagedInterface.RefreshTypeInfoFunctionPtr);
                 var deToastDatum = System.Runtime.InteropServices.Marshal.GetDelegateForFunctionPointer<ReferenceTypeConversionDelegate>(unmanagedInterface.DeToastDatumFunctionPtr);
                 var getAttributeByNum = System.Runtime.InteropServices.Marshal.GetDelegateForFunctionPointer<GetAttributeByNumDelegate>(unmanagedInterface.GetAttributeByNumFunctionPtr);
 
                 ServerMemory.Initialize(palloc, palloc0, repalloc, pfree);
                 ServerLog.Initialize(elog, ereport);
-                ServerFunctions.Initialize(getText, setText, deToastDatum, getAttributeByNum, getTypeInfo);
+                ServerFunctions.Initialize(getText, setText, deToastDatum, getAttributeByNum, getTypeInfo, refreshTypeInfo);
 
                 PlClrManagedInterface managedInterface;
                 managedInterface.CompileFunctionPtr =
