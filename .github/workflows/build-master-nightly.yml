@@ -1,0 +1,85 @@
+name: Sync master with upstream master and build it nightly
+
+on:
+  schedule:
+  - cron:  "0 0 * * *"
+
+jobs:
+  repo-sync:
+
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@master
+    - name: Sync master
+      uses: repo-sync/github-sync@v2
+      with:
+        source_repo: "https://github.com/postgres/postgres.git"
+        source_branch: "master"
+        destination_branch: "master"
+        github_token: ${{ secrets.GITHUB_TOKEN }}
+
+  build-ubuntu-latest:
+
+    runs-on: ubuntu-latest
+    needs: repo-sync
+
+    steps:
+    - uses: actions/checkout@v2
+      with:
+        ref: 'master'
+    - name: Prepare environment
+      shell: bash
+      run: |
+        mkdir -p $HOME/postgres-nightly
+        sudo apt-get update -qq
+        sudo apt-get install -qq libreadline-dev bison flex
+    - name: Configure
+      run: ./configure --with-openssl --prefix=$HOME/postgres-nightly
+    - name: Make
+      run: make
+    - name: Make check
+      run: make check
+    - name: Make install
+      run: make install
+    - name: Upload Linux artifacts
+      uses: actions/upload-artifact@v2
+      with:
+        name: postgres-nightly-ubuntu-latest
+        path: ~/postgres-nightly
+
+  build-windows-latest:
+
+    runs-on: windows-latest
+    needs: repo-sync
+
+    steps:
+    - uses: actions/checkout@v2
+      with:
+        ref: 'master'
+    - uses: ilammy/msvc-dev-cmd@v1
+    - name: Prepare environment
+      run: choco install winflexbison3
+    - name: Fix flex and bison wrappers
+      shell: bash
+      run: |
+        BUILD_DIR=$(echo "${{ github.workspace }}/src/tools/msvc" | sed 's|\\|/|g')
+        sed -i "s|flex -V|win_flex -V|" $BUILD_DIR/pgflex.pl
+        sed -i "s|flex \$flexflags|win_flex \$flexflags|" $BUILD_DIR/pgflex.pl
+        sed -i "s|bison -V|win_bison -V|" $BUILD_DIR/pgbison.pl
+        sed -i "s|bison \$nodep|win_bison \$nodep|" $BUILD_DIR/pgbison.pl
+    - name: Build
+      shell: cmd
+      run: |
+        cd ${{ github.workspace }}\src\tools\msvc
+        build.bat
+    - name: Install
+      shell: cmd
+      run: |
+        cd ${{ github.workspace }}\src\tools\msvc
+        install.bat %HOME%/postgres-nightly
+    - name: Upload Windows artifacts
+      uses: actions/upload-artifact@v2
+      with:
+        name: postgres-nightly-windows-latest
+        path: ${{ env.HOME }}/postgres-nightly
