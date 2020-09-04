@@ -59,7 +59,7 @@ jobs:
         ref: 'master'
     - uses: ilammy/msvc-dev-cmd@v1
     - name: Prepare environment
-      run: choco install winflexbison3
+      run: choco install winflexbison3 -v
     - name: Fix flex and bison wrappers
       shell: bash
       run: |
